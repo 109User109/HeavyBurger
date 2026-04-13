@@ -171,6 +171,15 @@
             <select name="categoryId" required></select>
           </label>
 
+          <div class="full extras-editor">
+            <div class="section-head">
+              <h3>Extras opcionales</h3>
+              <button id="add-extra-btn" type="button" class="outline-btn">Agregar extra</button>
+            </div>
+            <p class="muted">Define los agregados que el cliente puede seleccionar para este producto.</p>
+            <div id="product-extras-list" class="extras-list"></div>
+          </div>
+
           <label>
             Imagen del producto
             <input id="image-file-input" type="file" name="image" accept="image/*" />

@@ -52,6 +52,8 @@ const dom = {
   productSearch: document.getElementById('admin-product-search'),
   productCategoryFilter: document.getElementById('admin-product-category-filter'),
   productSort: document.getElementById('admin-product-sort'),
+  addExtraBtn: document.getElementById('add-extra-btn'),
+  productExtrasList: document.getElementById('product-extras-list'),
   primaryColorPicker: document.getElementById('primary-color-picker'),
   primaryColorHex: document.getElementById('primary-color-hex'),
   primaryColorChip: document.getElementById('primary-color-chip'),
@@ -121,6 +123,8 @@ function bindEvents() {
   dom.productForm.addEventListener('submit', onSaveProduct);
   dom.productsList.addEventListener('click', onProductAction);
   dom.cancelEdit.addEventListener('click', resetProductForm);
+  dom.addExtraBtn.addEventListener('click', () => appendExtraEditorRow());
+  dom.productExtrasList.addEventListener('click', onProductExtrasAction);
 
   dom.productSearch.addEventListener('input', (event) => {
     state.productView.query = event.target.value.trim().toLowerCase();
@@ -543,6 +547,7 @@ function renderProducts() {
             <span>${formatMoney(product.price)}</span>
             <span>Categoria: ${escapeHtml(getCategoryName(product.categoryId))}</span>
             <span>Publicado: ${escapeHtml(formatDate(product.createdAt))}</span>
+            <span>Extras configurados: ${normalizeProductExtras(product.extras).length}</span>
             <span>${escapeHtml(product.description || 'Sin descripcion')}</span>
           </div>
         </div>
@@ -554,6 +559,111 @@ function renderProducts() {
     `
     )
     .join('');
+}
+
+function normalizeProductExtras(rawExtras) {
+  if (!Array.isArray(rawExtras)) return [];
+
+  const normalized = [];
+
+  for (const extra of rawExtras) {
+    const name = String(extra?.name || '').trim();
+    const parsedPrice = Number(extra?.price);
+
+    if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      continue;
+    }
+
+    normalized.push({
+      name,
+      price: Number(parsedPrice.toFixed(2))
+    });
+  }
+
+  return normalized;
+}
+
+function renderProductExtrasEditor(extras = []) {
+  dom.productExtrasList.innerHTML = '';
+
+  if (!Array.isArray(extras) || !extras.length) {
+    dom.productExtrasList.innerHTML =
+      '<p class="empty-list" data-empty-extras>Sin extras por ahora. Agrega uno si aplica.</p>';
+    return;
+  }
+
+  for (const extra of extras) {
+    appendExtraEditorRow(extra);
+  }
+}
+
+function appendExtraEditorRow(extra = {}) {
+  const emptyState = dom.productExtrasList.querySelector('[data-empty-extras]');
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+  const row = document.createElement('article');
+  row.className = 'extra-row';
+  row.innerHTML = `
+    <label>
+      Nombre del extra
+      <input type="text" data-extra-field="name" value="${escapeAttribute(extra.name || '')}" placeholder="Ej: Doble queso" />
+    </label>
+    <label>
+      Precio adicional
+      <input type="number" data-extra-field="price" min="0" step="0.01" value="${escapeAttribute(
+        extra.price ?? ''
+      )}" placeholder="0" />
+    </label>
+    <button type="button" class="danger-btn" data-action="remove-extra">Quitar</button>
+  `;
+
+  dom.productExtrasList.appendChild(row);
+}
+
+function onProductExtrasAction(event) {
+  const button = event.target.closest('button[data-action="remove-extra"]');
+  if (!button) return;
+
+  const row = button.closest('.extra-row');
+  if (!row) return;
+
+  row.remove();
+
+  if (!dom.productExtrasList.querySelector('.extra-row')) {
+    renderProductExtrasEditor([]);
+  }
+}
+
+function collectProductExtrasFromEditor() {
+  const rows = Array.from(dom.productExtrasList.querySelectorAll('.extra-row'));
+  const extras = [];
+
+  for (const row of rows) {
+    const name = row.querySelector('[data-extra-field="name"]')?.value.trim() || '';
+    const priceRaw = row.querySelector('[data-extra-field="price"]')?.value.trim() || '';
+    const hasAnyValue = Boolean(name || priceRaw);
+
+    if (!hasAnyValue) {
+      continue;
+    }
+
+    const parsedPrice = Number(priceRaw);
+    if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      return {
+        ok: false,
+        error: 'Revisa extras: cada uno debe tener nombre y precio valido.'
+      };
+    }
+
+    extras.push({
+      name,
+      price: Number(parsedPrice.toFixed(2))
+    });
+  }
+
+  return { ok: true, extras };
 }
 
 function getCategoryName(categoryId) {
@@ -738,11 +848,18 @@ async function onSaveProduct(event) {
     return;
   }
 
+  const extrasResult = collectProductExtrasFromEditor();
+  if (!extrasResult.ok) {
+    showStatus(extrasResult.error, 'error');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('name', name);
   formData.append('description', description);
   formData.append('price', String(price));
   formData.append('categoryId', categoryId);
+  formData.append('extras', JSON.stringify(extrasResult.extras));
   formData.append('removeImage', removeImage ? 'true' : 'false');
 
   if (!removeImage && shouldUploadEditedImage()) {
@@ -831,6 +948,7 @@ async function loadProductIntoForm(productId) {
   form.elements.description.value = product.description || '';
   form.elements.price.value = product.price;
   form.elements.categoryId.value = product.categoryId;
+  renderProductExtrasEditor(normalizeProductExtras(product.extras));
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
   form.elements.removeImage.checked = false;
@@ -856,6 +974,7 @@ function resetProductForm() {
   dom.productForm.elements.productId.value = '';
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
+  renderProductExtrasEditor([]);
 
   if (state.store?.categories?.[0]) {
     dom.productForm.elements.categoryId.value = state.store.categories[0].id;

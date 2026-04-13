@@ -120,6 +120,75 @@
 
     <div id="cart-toast" class="cart-toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
+    <div id="product-config-modal" class="product-config-modal" hidden>
+      <button
+        id="product-config-backdrop"
+        class="product-config-backdrop"
+        type="button"
+        aria-label="Cerrar personalizacion"
+      ></button>
+      <section
+        class="product-config-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="config-product-name"
+      >
+        <header class="product-config-header">
+          <div>
+            <p class="config-kicker">Personaliza tu pedido</p>
+            <h3 id="config-product-name">Producto</h3>
+            <p id="config-base-price" class="config-base-price"></p>
+          </div>
+          <button
+            id="close-product-config-btn"
+            class="icon-close-btn"
+            type="button"
+            aria-label="Cerrar personalizacion"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </header>
+
+        <form id="product-config-form" class="product-config-form">
+          <section class="config-section">
+            <h4>Extras</h4>
+            <div id="config-extras-list" class="config-extras-list"></div>
+          </section>
+
+          <label class="config-note-field">
+            Comentarios para este producto
+            <textarea
+              id="config-note"
+              rows="3"
+              maxlength="220"
+              placeholder="Ej: sin cebolla, bien cocido..."
+            ></textarea>
+          </label>
+
+          <label class="config-qty-field">
+            Cantidad
+            <div class="config-qty-controls">
+              <button id="config-qty-decrease" type="button" class="qty-btn" aria-label="Quitar uno">
+                <span aria-hidden="true">&minus;</span>
+              </button>
+              <input id="config-quantity" type="number" min="1" step="1" value="1" />
+              <button id="config-qty-increase" type="button" class="qty-btn" aria-label="Agregar uno">
+                <span aria-hidden="true">+</span>
+              </button>
+            </div>
+          </label>
+
+          <footer class="config-footer">
+            <p>
+              Total de este item:
+              <strong id="config-total-price">$0</strong>
+            </p>
+            <button type="submit" class="primary-btn">Agregar al carrito</button>
+          </footer>
+        </form>
+      </section>
+    </div>
+
     <template id="product-card-template">
       <article class="product-card">
         <div class="thumb"></div>

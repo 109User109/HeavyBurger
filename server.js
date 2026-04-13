@@ -62,6 +62,70 @@ function sanitizePrice(value) {
   return Number(parsed.toFixed(2));
 }
 
+function normalizeProductExtras(rawExtras) {
+  if (!Array.isArray(rawExtras)) return [];
+
+  const normalized = [];
+
+  for (let index = 0; index < rawExtras.length; index += 1) {
+    const extra = rawExtras[index];
+    const name = sanitizeText(extra?.name);
+    const price = sanitizePrice(extra?.price);
+
+    if (!name || price === null) continue;
+
+    const fallbackIdBase = slugify(name) || `extra-${index + 1}`;
+    const id = sanitizeText(extra?.id, `${fallbackIdBase}-${index + 1}`);
+
+    normalized.push({
+      id,
+      name,
+      price
+    });
+  }
+
+  return normalized;
+}
+
+function parseExtrasPayload(rawExtras) {
+  if (rawExtras === undefined || rawExtras === null || rawExtras === '') {
+    return [];
+  }
+
+  let parsed = rawExtras;
+
+  if (typeof rawExtras === 'string') {
+    try {
+      parsed = JSON.parse(rawExtras);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!Array.isArray(parsed)) {
+    return null;
+  }
+
+  const normalized = [];
+
+  for (const extra of parsed) {
+    const name = sanitizeText(extra?.name);
+    const price = sanitizePrice(extra?.price);
+
+    if (!name || price === null) {
+      return null;
+    }
+
+    normalized.push({
+      id: makeId('extra'),
+      name,
+      price
+    });
+  }
+
+  return normalized;
+}
+
 function sanitizePhone(value) {
   return String(value || '').replace(/\D/g, '');
 }
@@ -365,6 +429,12 @@ app.get('/api/store', async (_, res) => {
   try {
     const store = await readStore();
     store.settings = withSettingsDefaults(store.settings);
+    store.products = Array.isArray(store.products)
+      ? store.products.map((product) => ({
+          ...product,
+          extras: normalizeProductExtras(product.extras)
+        }))
+      : [];
     res.json(store);
   } catch {
     res.status(500).json({ error: 'Could not read store data.' });
@@ -523,10 +593,17 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
     const description = sanitizeText(req.body.description);
     const categoryId = sanitizeText(req.body.categoryId);
     const price = sanitizePrice(req.body.price);
+    const extras = parseExtrasPayload(req.body.extras);
 
     if (!name || !categoryId || price === null) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
       res.status(400).json({ error: 'Name, category and price are required.' });
+      return;
+    }
+
+    if (extras === null) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: 'Invalid extras payload.' });
       return;
     }
 
@@ -543,6 +620,7 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       description,
       price,
       categoryId,
+      extras,
       image: req.file ? `/uploads/${req.file.filename}` : '',
       createdAt: new Date().toISOString()
     };
@@ -573,11 +651,21 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
     const description = sanitizeText(req.body.description, product.description);
     const categoryId = sanitizeText(req.body.categoryId, product.categoryId);
     const price = req.body.price !== undefined ? sanitizePrice(req.body.price) : product.price;
+    const extras =
+      req.body.extras !== undefined
+        ? parseExtrasPayload(req.body.extras)
+        : normalizeProductExtras(product.extras);
     const removeImage = String(req.body.removeImage || 'false') === 'true';
 
     if (!name || price === null || !categoryId) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
       res.status(400).json({ error: 'Name, category and price are required.' });
+      return;
+    }
+
+    if (extras === null) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: 'Invalid extras payload.' });
       return;
     }
 
@@ -594,6 +682,7 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
     product.description = description;
     product.price = price;
     product.categoryId = categoryId;
+    product.extras = extras;
 
     if (req.file) {
       product.image = `/uploads/${req.file.filename}`;

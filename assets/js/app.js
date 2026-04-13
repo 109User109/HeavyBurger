@@ -2,9 +2,14 @@
   store: null,
   selectedCategoryId: 'all',
   searchTerm: '',
-  cart: new Map(),
+  cart: [],
   cartOpen: false,
-  toastTimerId: null
+  toastTimerId: null,
+  configurator: {
+    open: false,
+    productId: '',
+    extras: []
+  }
 };
 
 const DEFAULT_PRIMARY_COLOR = '#B8BDC6';
@@ -30,7 +35,19 @@ const dom = {
   cartTotal: document.getElementById('cart-total'),
   cartNote: document.getElementById('cart-note'),
   checkoutBtn: document.getElementById('checkout-btn'),
-  cartToast: document.getElementById('cart-toast')
+  cartToast: document.getElementById('cart-toast'),
+  productConfigModal: document.getElementById('product-config-modal'),
+  productConfigBackdrop: document.getElementById('product-config-backdrop'),
+  productConfigForm: document.getElementById('product-config-form'),
+  closeProductConfigBtn: document.getElementById('close-product-config-btn'),
+  configProductName: document.getElementById('config-product-name'),
+  configBasePrice: document.getElementById('config-base-price'),
+  configExtrasList: document.getElementById('config-extras-list'),
+  configNote: document.getElementById('config-note'),
+  configQuantity: document.getElementById('config-quantity'),
+  configQtyDecrease: document.getElementById('config-qty-decrease'),
+  configQtyIncrease: document.getElementById('config-qty-increase'),
+  configTotalPrice: document.getElementById('config-total-price')
 };
 
 init().catch((error) => {
@@ -41,8 +58,9 @@ init().catch((error) => {
 async function init() {
   bindEvents();
   initVisualEffects();
-  await loadStore();
   setCartOpen(false);
+  setProductConfiguratorOpen(false);
+  await loadStore();
 }
 
 function bindEvents() {
@@ -64,24 +82,39 @@ function bindEvents() {
     const button = event.target.closest('button[data-product-id]');
     if (!button) return;
 
-    addToCart(button.dataset.productId);
+    openProductConfigurator(button.dataset.productId);
   });
 
   dom.cartItems.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-action]');
     if (!button) return;
 
-    const productId = button.dataset.productId;
+    const cartItemId = button.dataset.cartItemId;
     const action = button.dataset.action;
 
-    if (action === 'increase') updateCartQuantity(productId, 1);
-    if (action === 'decrease') updateCartQuantity(productId, -1);
+    if (action === 'increase') updateCartQuantity(cartItemId, 1);
+    if (action === 'decrease') updateCartQuantity(cartItemId, -1);
   });
 
   dom.openCartBtn.addEventListener('click', () => setCartOpen(true));
   dom.floatingCartBtn.addEventListener('click', () => setCartOpen(true));
   dom.closeCartBtn.addEventListener('click', () => setCartOpen(false));
   dom.cartBackdrop.addEventListener('click', () => setCartOpen(false));
+
+  dom.productConfigBackdrop.addEventListener('click', closeProductConfigurator);
+  dom.closeProductConfigBtn.addEventListener('click', closeProductConfigurator);
+  dom.productConfigForm.addEventListener('submit', onSubmitProductConfigurator);
+  dom.configExtrasList.addEventListener('change', updateProductConfiguratorTotal);
+  dom.configQuantity.addEventListener('input', () => {
+    readConfiguratorQuantity();
+    updateProductConfiguratorTotal();
+  });
+  dom.configQtyDecrease.addEventListener('click', () => {
+    adjustConfiguratorQuantity(-1);
+  });
+  dom.configQtyIncrease.addEventListener('click', () => {
+    adjustConfiguratorQuantity(1);
+  });
 
   if (dom.menuToggle && dom.topnav) {
     dom.menuToggle.addEventListener('click', () => {
@@ -106,10 +139,15 @@ function bindEvents() {
   }
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      if (state.cartOpen) setCartOpen(false);
-      if (dom.topnav?.classList.contains('is-open')) closeTopNav();
+    if (event.key !== 'Escape') return;
+
+    if (state.configurator.open) {
+      closeProductConfigurator();
+      return;
     }
+
+    if (state.cartOpen) setCartOpen(false);
+    if (dom.topnav?.classList.contains('is-open')) closeTopNav();
   });
 
   dom.checkoutBtn.addEventListener('click', checkoutByWhatsapp);
@@ -158,6 +196,12 @@ async function loadStore() {
 
   if (!Array.isArray(state.store.categories)) state.store.categories = [];
   if (!Array.isArray(state.store.products)) state.store.products = [];
+
+  state.store.products = state.store.products.map((product) => ({
+    ...product,
+    extras: normalizeProductExtras(product.extras)
+  }));
+
   applyThemeFromSettings(state.store.settings || {});
 
   const title = state.store.settings?.storeName || 'Tienda';
@@ -177,6 +221,14 @@ function setCartOpen(nextState) {
   document.body.classList.toggle('cart-open', state.cartOpen);
   dom.cartDrawer.setAttribute('aria-hidden', state.cartOpen ? 'false' : 'true');
   if (state.cartOpen) closeTopNav();
+}
+
+function setProductConfiguratorOpen(nextState) {
+  state.configurator.open = Boolean(nextState);
+  dom.productConfigModal.hidden = false;
+  dom.productConfigModal.classList.toggle('is-open', state.configurator.open);
+  dom.productConfigModal.setAttribute('aria-hidden', state.configurator.open ? 'false' : 'true');
+  document.body.classList.toggle('modal-open', state.configurator.open);
 }
 
 function normalizeHexColor(value) {
@@ -246,6 +298,28 @@ function formatMoney(value) {
     const symbol = state.store?.settings?.currencySymbol || '$';
     return `${symbol}${Number(value).toLocaleString('es-AR')}`;
   }
+}
+
+function normalizeProductExtras(rawExtras) {
+  if (!Array.isArray(rawExtras)) return [];
+
+  const normalized = [];
+
+  for (const extra of rawExtras) {
+    const name = String(extra?.name || '').trim();
+    const parsedPrice = Number(extra?.price);
+
+    if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      continue;
+    }
+
+    normalized.push({
+      name,
+      price: Number(parsedPrice.toFixed(2))
+    });
+  }
+
+  return normalized;
 }
 
 function getCategoryName(categoryId) {
@@ -324,12 +398,186 @@ function renderProducts() {
   dom.productsGrid.appendChild(fragment);
 }
 
-function addToCart(productId) {
-  const currentQty = state.cart.get(productId) || 0;
-  state.cart.set(productId, currentQty + 1);
-  const product = state.store?.products?.find((item) => item.id === productId);
-  showCartToast(`${product?.name || 'Producto'} agregado al carrito`);
+function getProductById(productId) {
+  return state.store?.products?.find((item) => item.id === productId) || null;
+}
+
+function openProductConfigurator(productId) {
+  const product = getProductById(productId);
+  if (!product) return;
+
+  state.configurator.productId = product.id;
+  state.configurator.extras = normalizeProductExtras(product.extras);
+
+  dom.configProductName.textContent = product.name;
+  dom.configBasePrice.textContent = `Precio base: ${formatMoney(product.price)}`;
+  dom.configNote.value = '';
+  dom.configQuantity.value = '1';
+
+  renderConfiguratorExtras();
+  updateProductConfiguratorTotal();
+  setProductConfiguratorOpen(true);
+}
+
+function closeProductConfigurator() {
+  state.configurator.productId = '';
+  state.configurator.extras = [];
+  setProductConfiguratorOpen(false);
+}
+
+function renderConfiguratorExtras() {
+  dom.configExtrasList.innerHTML = '';
+
+  if (!state.configurator.extras.length) {
+    dom.configExtrasList.innerHTML =
+      '<p class="empty-cart">Este producto no tiene extras configurados.</p>';
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < state.configurator.extras.length; index += 1) {
+    const extra = state.configurator.extras[index];
+
+    const label = document.createElement('label');
+    label.className = 'config-extra-option';
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = String(index);
+
+    const textWrap = document.createElement('div');
+
+    const nameLine = document.createElement('span');
+    nameLine.textContent = extra.name;
+
+    const priceLine = document.createElement('small');
+    priceLine.textContent = `+${formatMoney(extra.price)}`;
+
+    textWrap.appendChild(nameLine);
+    textWrap.appendChild(priceLine);
+
+    label.appendChild(checkbox);
+    label.appendChild(textWrap);
+
+    fragment.appendChild(label);
+  }
+
+  dom.configExtrasList.appendChild(fragment);
+}
+
+function readConfiguratorQuantity() {
+  const parsed = Number.parseInt(dom.configQuantity.value, 10);
+  const quantity = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  dom.configQuantity.value = String(quantity);
+  return quantity;
+}
+
+function adjustConfiguratorQuantity(delta) {
+  const current = readConfiguratorQuantity();
+  const next = Math.max(1, current + delta);
+  dom.configQuantity.value = String(next);
+  updateProductConfiguratorTotal();
+}
+
+function getSelectedConfiguratorExtras() {
+  const selected = [];
+  const checkedInputs = Array.from(dom.configExtrasList.querySelectorAll('input[type="checkbox"]:checked'));
+
+  for (const input of checkedInputs) {
+    const index = Number.parseInt(input.value, 10);
+    const extra = state.configurator.extras[index];
+    if (!extra) continue;
+
+    selected.push({
+      name: extra.name,
+      price: extra.price
+    });
+  }
+
+  return selected;
+}
+
+function updateProductConfiguratorTotal() {
+  const product = getProductById(state.configurator.productId);
+  if (!product) {
+    dom.configTotalPrice.textContent = formatMoney(0);
+    return;
+  }
+
+  const quantity = readConfiguratorQuantity();
+  const selectedExtras = getSelectedConfiguratorExtras();
+  const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
+  const unitPrice = product.price + extrasTotal;
+  const itemTotal = unitPrice * quantity;
+
+  dom.configTotalPrice.textContent = formatMoney(itemTotal);
+}
+
+function onSubmitProductConfigurator(event) {
+  event.preventDefault();
+
+  const product = getProductById(state.configurator.productId);
+  if (!product) return;
+
+  const quantity = readConfiguratorQuantity();
+  const selectedExtras = getSelectedConfiguratorExtras();
+  const note = String(dom.configNote.value || '').trim();
+
+  addConfiguredProductToCart({
+    product,
+    quantity,
+    selectedExtras,
+    note
+  });
+
+  closeProductConfigurator();
+  showCartToast(`${product.name} agregado al carrito`);
+}
+
+function addConfiguredProductToCart({ product, quantity, selectedExtras, note }) {
+  const signature = buildCartSignature(product.id, selectedExtras, note);
+  const existingItem = state.cart.find((item) => item.signature === signature);
+
+  if (existingItem) {
+    existingItem.quantity += quantity;
+  } else {
+    state.cart.push({
+      id: createClientId('cart'),
+      signature,
+      productId: product.id,
+      quantity,
+      extras: selectedExtras.map((extra) => ({
+        name: extra.name,
+        price: extra.price
+      })),
+      note
+    });
+  }
+
   renderCart();
+}
+
+function buildCartSignature(productId, extras, note) {
+  const normalizedNote = String(note || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const extrasSignature = [...extras]
+    .map((extra) => `${String(extra.name || '').trim().toLowerCase()}::${Number(extra.price || 0).toFixed(2)}`)
+    .sort()
+    .join('|');
+
+  return `${productId}::${extrasSignature}::${normalizedNote}`;
+}
+
+function createClientId(prefix) {
+  return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeCartExtras(rawExtras) {
+  return normalizeProductExtras(rawExtras);
 }
 
 function showCartToast(message) {
@@ -348,14 +596,16 @@ function showCartToast(message) {
   }, 1600);
 }
 
-function updateCartQuantity(productId, delta) {
-  const currentQty = state.cart.get(productId) || 0;
-  const nextQty = currentQty + delta;
+function updateCartQuantity(cartItemId, delta) {
+  const index = state.cart.findIndex((item) => item.id === cartItemId);
+  if (index === -1) return;
+
+  const nextQty = state.cart[index].quantity + delta;
 
   if (nextQty <= 0) {
-    state.cart.delete(productId);
+    state.cart.splice(index, 1);
   } else {
-    state.cart.set(productId, nextQty);
+    state.cart[index].quantity = nextQty;
   }
 
   renderCart();
@@ -365,32 +615,60 @@ function renderCart() {
   if (!state.store) return;
 
   const fragment = document.createDocumentFragment();
+  const nextCart = [];
   let totalItems = 0;
   let totalAmount = 0;
 
-  for (const [productId, qty] of state.cart.entries()) {
-    const product = state.store.products.find((item) => item.id === productId);
+  for (const cartItem of state.cart) {
+    const product = getProductById(cartItem.productId);
     if (!product) {
-      state.cart.delete(productId);
       continue;
     }
 
-    totalItems += qty;
-    const subtotal = product.price * qty;
+    const extras = normalizeCartExtras(cartItem.extras);
+    const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
+    const unitPrice = product.price + extrasTotal;
+    const subtotal = unitPrice * cartItem.quantity;
+
+    totalItems += cartItem.quantity;
     totalAmount += subtotal;
+
+    const normalizedItem = {
+      ...cartItem,
+      extras,
+      quantity: cartItem.quantity
+    };
+
+    nextCart.push(normalizedItem);
+
+    const extrasHtml = extras.length
+      ? `<ul class="cart-item-extras">${extras
+          .map((extra) => `<li>${escapeHtml(extra.name)} (+${escapeHtml(formatMoney(extra.price))})</li>`)
+          .join('')}</ul>`
+      : '';
+
+    const noteHtml = cartItem.note
+      ? `<p class="cart-item-note">Nota: ${escapeHtml(cartItem.note)}</p>`
+      : '';
 
     const row = document.createElement('article');
     row.className = 'cart-item';
     row.innerHTML = `
       <div>
         <h4>${escapeHtml(product.name)}</h4>
-        <p class="unit">${formatMoney(product.price)} c/u</p>
+        <p class="unit">${formatMoney(unitPrice)} c/u</p>
+        ${extrasHtml}
+        ${noteHtml}
       </div>
       <div>
         <div class="qty-controls">
-          <button class="qty-btn" data-action="decrease" data-product-id="${product.id}" aria-label="Quitar uno">-</button>
-          <span class="qty-value">${qty}</span>
-          <button class="qty-btn" data-action="increase" data-product-id="${product.id}" aria-label="Agregar uno">+</button>
+          <button class="qty-btn" data-action="decrease" data-cart-item-id="${escapeAttribute(
+            cartItem.id
+          )}" aria-label="Quitar uno">-</button>
+          <span class="qty-value">${cartItem.quantity}</span>
+          <button class="qty-btn" data-action="increase" data-cart-item-id="${escapeAttribute(
+            cartItem.id
+          )}" aria-label="Agregar uno">+</button>
         </div>
         <p class="item-subtotal">${formatMoney(subtotal)}</p>
       </div>
@@ -398,6 +676,8 @@ function renderCart() {
 
     fragment.appendChild(row);
   }
+
+  state.cart = nextCart;
 
   dom.cartItems.innerHTML = '';
   if (!totalItems) {
@@ -416,8 +696,7 @@ function renderCart() {
 }
 
 function checkoutByWhatsapp() {
-  const cartEntries = Array.from(state.cart.entries());
-  if (!cartEntries.length) return;
+  if (!state.cart.length) return;
 
   const settings = state.store.settings || {};
   const phone = String(settings.whatsappNumber || '').replace(/\D/g, '');
@@ -430,13 +709,29 @@ function checkoutByWhatsapp() {
   let totalAmount = 0;
   const productLines = [];
 
-  for (const [productId, qty] of cartEntries) {
-    const product = state.store.products.find((item) => item.id === productId);
+  for (const cartItem of state.cart) {
+    const product = getProductById(cartItem.productId);
     if (!product) continue;
 
-    const subtotal = product.price * qty;
+    const extras = normalizeCartExtras(cartItem.extras);
+    const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
+    const unitPrice = product.price + extrasTotal;
+    const subtotal = unitPrice * cartItem.quantity;
+
     totalAmount += subtotal;
-    productLines.push(`- ${product.name} x${qty} (${formatMoney(subtotal)})`);
+
+    productLines.push(`- ${product.name} x${cartItem.quantity} (${formatMoney(subtotal)})`);
+
+    if (extras.length) {
+      const extrasText = extras
+        .map((extra) => `${extra.name} (+${formatMoney(extra.price)})`)
+        .join(', ');
+      productLines.push(`  Extras: ${extrasText}`);
+    }
+
+    if (cartItem.note) {
+      productLines.push(`  Comentario: ${cartItem.note}`);
+    }
   }
 
   const lines = ['Hola! Quiero pedir:', '', '*Productos*'];
