@@ -162,6 +162,7 @@ async function loadStore() {
 
   const title = state.store.settings?.storeName || 'Tienda';
   dom.storeName.textContent = title;
+  dom.storeName.classList.remove('is-loading');
   document.title = title;
 
   dom.cartNote.textContent = state.store.settings?.whatsappFooter || '';
