@@ -428,10 +428,7 @@ function checkoutByWhatsapp() {
   }
 
   let totalAmount = 0;
-  const lines = [
-    `Hola! Quiero consultar/comprar estos productos en ${settings.storeName || 'la tienda'}:`,
-    ''
-  ];
+  const productLines = [];
 
   for (const [productId, qty] of cartEntries) {
     const product = state.store.products.find((item) => item.id === productId);
@@ -439,13 +436,16 @@ function checkoutByWhatsapp() {
 
     const subtotal = product.price * qty;
     totalAmount += subtotal;
-    lines.push(`- ${product.name} x${qty} (${formatMoney(subtotal)})`);
+    productLines.push(`- ${product.name} x${qty} (${formatMoney(subtotal)})`);
   }
 
+  const lines = ['Hola! Quiero pedir:', '', '*Productos*'];
+  lines.push(...(productLines.length ? productLines : ['- Sin productos validos']));
   lines.push('');
-  lines.push(`Total estimado: ${formatMoney(totalAmount)}`);
+  lines.push('*Total*');
+  lines.push(formatMoney(totalAmount));
   lines.push('');
-  lines.push(settings.whatsappFooter || 'Sigue disponible?');
+  lines.push('Espero la confirmación de mi pedido.');
 
   const message = lines.join('\n');
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
