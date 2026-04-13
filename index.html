@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nocturna Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/css/styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow bg-glow-one"></div>
+    <div class="bg-glow bg-glow-two"></div>
+
+    <header class="topbar">
+      <a href="#inicio" class="brand-link">
+        <span class="brand-badge">HB</span>
+        <span id="store-name" class="brand-text">Nocturna Store</span>
+      </a>
+
+      <button id="menu-toggle" class="menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+      </button>
+
+      <nav id="topnav" class="topnav">
+        <a href="#inicio">Inicio</a>
+        <a href="#catalogo">Catalogo</a>
+        <a href="#catalogo">Categorias</a>
+      </nav>
+
+      <button id="open-cart-btn" class="cart-trigger" type="button">
+        Ver carrito
+        <span id="cart-trigger-count" class="pill">0</span>
+      </button>
+    </header>
+
+    <main id="inicio" class="container">
+      <section class="hero reveal">
+        <div class="hero-copy">
+          <p class="kicker">Catalogo online</p>
+          <h1>Estetica potente, compra rapida por WhatsApp.</h1>
+          <p class="hero-text">
+            Elige productos, arma tu carrito y consulta o compra al instante por WhatsApp.
+            Todo con un look HeavyBurguer, adaptado a tu tienda.
+          </p>
+          <a class="cta" href="#catalogo">Explorar productos</a>
+        </div>
+
+        <aside class="hero-panel">
+          <h2>Compra simple</h2>
+          <p>Flujo rapido para celular y desktop</p>
+          <ul>
+            <li>Filtra por categorias</li>
+            <li>Agrega al carrito en segundos</li>
+            <li>Envia pedido por WhatsApp</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section id="catalogo" class="menu-section reveal">
+        <div class="section-head">
+          <h2>Catalogo</h2>
+          <p>Productos dinamicos cargados desde el panel admin.</p>
+        </div>
+
+        <section class="catalog-panel">
+          <div class="catalog-toolbar">
+            <label class="search-box" for="search-input">
+              <span>Buscar</span>
+              <input id="search-input" type="search" placeholder="Nombre o descripcion" />
+            </label>
+          </div>
+
+          <div id="category-filters" class="category-filters"></div>
+          <div id="products-grid" class="products-grid"></div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="footer reveal">
+      <p>heavy style storefront</p>
+      <p>Checkout directo por WhatsApp.</p>
+    </footer>
+
+    <div id="cart-backdrop" class="cart-backdrop"></div>
+
+    <aside id="cart-drawer" class="cart-panel cart-drawer" aria-live="polite" aria-hidden="true">
+      <div class="cart-header">
+        <h2>Carrito</h2>
+        <div class="cart-header-actions">
+          <span id="cart-count" class="pill">0 items</span>
+          <button id="close-cart-btn" class="ghost-btn close-cart-btn" type="button">Cerrar</button>
+        </div>
+      </div>
+
+      <div id="cart-items" class="cart-items"></div>
+
+      <div class="cart-footer">
+        <div class="totals">
+          <span>Total estimado</span>
+          <strong id="cart-total">$0</strong>
+        </div>
+        <button id="checkout-btn" class="primary-btn" disabled>Comprar por WhatsApp</button>
+        <p class="cart-note" id="cart-note"></p>
+      </div>
+    </aside>
+
+    <button id="floating-cart-btn" class="floating-cart-btn" type="button" aria-label="Abrir carrito">
+      Carrito
+      <span id="floating-cart-count" class="pill">0</span>
+    </button>
+
+    <div id="cart-toast" class="cart-toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+    <template id="product-card-template">
+      <article class="product-card">
+        <div class="thumb"></div>
+        <div class="content">
+          <p class="category"></p>
+          <h3></h3>
+          <p class="description"></p>
+          <div class="card-footer">
+            <strong class="price"></strong>
+            <button class="add-btn" type="button">Agregar</button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script src="/assets/js/app.js" defer></script>
+  </body>
+</html>

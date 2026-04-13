@@ -1,0 +1,53 @@
+{
+  "settings": {
+    "storeName": "Heavy Burger",
+    "whatsappNumber": "5493755657062",
+    "whatsappFooter": "Sigue disponible?",
+    "currency": "ARS",
+    "currencySymbol": "$",
+    "primaryColor": "#B8BDC6",
+    "secondaryColor": "#D8B062"
+  },
+  "categories": [
+    {
+      "id": "cat-mnnqqhg4yj4q9o",
+      "slug": "remeras",
+      "name": "Remeras"
+    },
+    {
+      "id": "cat-mnntnc48jd45iu",
+      "slug": "pantalones",
+      "name": "Pantalones"
+    },
+    {
+      "id": "cat-mnntnpdarwkq3g",
+      "slug": "accesorios",
+      "name": "Accesorios"
+    },
+    {
+      "id": "cat-mnntny8fzrisjn",
+      "slug": "zapatillas",
+      "name": "Zapatillas"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-mnnqrr535zgdia",
+      "name": "Remera",
+      "description": "",
+      "price": 1600,
+      "categoryId": "cat-mnnqqhg4yj4q9o",
+      "image": "/uploads/1775513290788-16376425.jpg",
+      "createdAt": "2026-04-06T22:08:10.791Z"
+    },
+    {
+      "id": "prod-mnnvibb3jnbf5d",
+      "name": "Test",
+      "description": "",
+      "price": 10000,
+      "categoryId": "cat-mnntnpdarwkq3g",
+      "image": "/uploads/1775521248141-708171365.jpg",
+      "createdAt": "2026-04-07T00:20:48.447Z"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Admin - Nocturna Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/css/admin.css" />
+  </head>
+  <body>
+    <div class="halo"></div>
+
+    <main class="login-shell container">
+      <section class="login-card">
+        <p class="label">Panel privado</p>
+        <h1>Acceso administrador</h1>
+        <p class="muted">
+          Solo una sesion puede estar activa al mismo tiempo para proteger los datos del catalogo.
+        </p>
+
+        <p id="login-status" class="status" aria-live="polite"></p>
+
+        <form id="admin-login-form" class="stacked-form" autocomplete="off">
+          <label>
+            Usuario
+            <input type="text" name="username" required />
+          </label>
+          <label>
+            Contrasena
+            <input type="password" name="password" required />
+          </label>
+          <button id="login-submit-btn" type="submit" class="primary-btn">Entrar al panel</button>
+        </form>
+      </section>
+    </main>
+
+    <script src="/assets/js/admin-login.js" defer></script>
+  </body>
+</html>

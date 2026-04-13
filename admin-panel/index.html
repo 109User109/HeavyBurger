@@ -1,0 +1,271 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel - Nocturna Store</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/assets/css/admin.css" />
+  </head>
+  <body>
+    <div class="halo"></div>
+
+    <main class="admin container">
+      <header class="admin-header">
+        <div>
+          <p class="label">Panel privado</p>
+          <h1>Admin de la tienda</h1>
+          <p class="muted">Gestiona productos, categorias, mensajes y configuracion general.</p>
+        </div>
+        <div class="admin-header-tools">
+          <p class="muted">Ruta directa: <code>/admin-panel</code></p>
+          <button id="logout-admin-btn" class="ghost-btn" type="button">Cerrar sesion</button>
+        </div>
+      </header>
+
+      <nav class="admin-nav" aria-label="Secciones del panel admin">
+        <button class="admin-tab active" type="button" data-admin-tab="products">Productos</button>
+        <button class="admin-tab" type="button" data-admin-tab="categories">Categorias</button>
+        <button class="admin-tab" type="button" data-admin-tab="messages">Mensajes</button>
+        <button class="admin-tab" type="button" data-admin-tab="general">General</button>
+      </nav>
+
+      <p id="status" class="status" aria-live="polite"></p>
+
+      <section class="card admin-section" data-admin-section="general" hidden>
+        <h2>General de la tienda</h2>
+        <form id="general-form" class="grid-2">
+          <label>
+            Nombre de tienda
+            <input type="text" name="storeName" required />
+          </label>
+          <label>
+            Codigo de moneda
+            <input type="text" name="currency" maxlength="3" required />
+          </label>
+          <label>
+            Simbolo de moneda
+            <input type="text" name="currencySymbol" maxlength="4" required />
+          </label>
+
+          <div class="full tone-editor">
+            <div class="section-head">
+              <h3>Tonos de la tienda</h3>
+              <p class="muted">Editor HEX en vivo para color principal y secundario.</p>
+            </div>
+
+            <div class="tone-grid">
+              <article class="tone-card">
+                <p class="tone-title">Color principal</p>
+                <p class="muted">Base de tonos neutros (gris del tema).</p>
+                <div class="hex-editor">
+                  <input
+                    id="primary-color-picker"
+                    type="color"
+                    value="#b8bdc6"
+                    aria-label="Selector de color principal"
+                  />
+                  <input
+                    id="primary-color-hex"
+                    type="text"
+                    name="primaryColor"
+                    maxlength="7"
+                    placeholder="#B8BDC6"
+                    required
+                  />
+                  <span id="primary-color-chip" class="tone-chip" aria-hidden="true"></span>
+                </div>
+              </article>
+
+              <article class="tone-card">
+                <p class="tone-title">Color secundario</p>
+                <p class="muted">Acentos y botones (turquesa del tema).</p>
+                <div class="hex-editor">
+                  <input
+                    id="secondary-color-picker"
+                    type="color"
+                    value="#d8b062"
+                    aria-label="Selector de color secundario"
+                  />
+                  <input
+                    id="secondary-color-hex"
+                    type="text"
+                    name="secondaryColor"
+                    maxlength="7"
+                    placeholder="#D8B062"
+                    required
+                  />
+                  <span id="secondary-color-chip" class="tone-chip" aria-hidden="true"></span>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="actions full">
+            <button type="submit" class="primary-btn">Guardar general</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card admin-section" data-admin-section="messages" hidden>
+        <h2>Editor de mensajes</h2>
+        <form id="messages-form" class="grid-2">
+          <label class="full">
+            Numero de WhatsApp (con codigo pais)
+            <input type="text" name="whatsappNumber" required />
+          </label>
+          <label class="full">
+            Texto final para WhatsApp
+            <textarea name="whatsappFooter" rows="4" required></textarea>
+          </label>
+          <div class="actions full">
+            <button type="submit" class="primary-btn">Guardar mensajes</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card admin-section" data-admin-section="categories" hidden>
+        <h2>Categorias</h2>
+
+        <form id="add-category-form" class="inline-form">
+          <input type="text" name="name" placeholder="Nueva categoria" required />
+          <button type="submit" class="primary-btn">Agregar</button>
+        </form>
+
+        <div id="categories-list" class="stack"></div>
+      </section>
+
+      <section class="card admin-section active" data-admin-section="products">
+        <div class="section-head">
+          <h2>Productos</h2>
+          <p class="muted">Sube imagenes al servidor y ajusta el encuadre en la tarjeta en vivo.</p>
+        </div>
+
+        <form id="product-form" class="grid-2" enctype="multipart/form-data">
+          <input type="hidden" name="productId" />
+
+          <label>
+            Nombre
+            <input type="text" name="name" required />
+          </label>
+          <label>
+            Precio
+            <input type="number" name="price" min="0" step="0.01" required />
+          </label>
+
+          <label class="full">
+            Descripcion
+            <textarea name="description" rows="3" placeholder="Descripcion breve"></textarea>
+          </label>
+
+          <label>
+            Categoria
+            <select name="categoryId" required></select>
+          </label>
+
+          <label>
+            Imagen del producto
+            <input id="image-file-input" type="file" name="image" accept="image/*" />
+          </label>
+
+          <label>
+            O tomar foto desde el movil
+            <div class="media-actions">
+              <button id="capture-photo-btn" type="button" class="outline-btn">Tomar foto</button>
+              <span class="muted">Abre la camara del dispositivo</span>
+            </div>
+            <input
+              id="camera-input"
+              type="file"
+              accept="image/*"
+              capture="environment"
+              hidden
+            />
+          </label>
+
+          <label class="full checkbox-row">
+            <input type="checkbox" name="removeImage" />
+            Quitar imagen actual (solo al editar)
+          </label>
+
+          <div class="preview-wrapper full">
+            <div class="preview-toolbar">
+              <p class="muted">Ajuste visual en la tarjeta</p>
+              <div class="actions">
+                <button type="button" id="toggle-image-adjust" class="outline-btn" disabled>
+                  Activar ajuste
+                </button>
+                <button type="button" id="reset-image-frame" class="ghost-btn" disabled>
+                  Reiniciar encuadre
+                </button>
+              </div>
+            </div>
+
+            <label class="zoom-control">
+              Zoom
+              <input id="image-zoom" type="range" min="1" max="3" step="0.01" value="1" disabled />
+            </label>
+
+            <p id="image-adjust-hint" class="muted">
+              Selecciona una imagen para editarla dentro de la tarjeta.
+            </p>
+
+            <article class="preview-card" id="preview-card">
+              <div class="preview-thumb" id="preview-thumb">
+                <span class="preview-empty" id="preview-empty">Sin imagen</span>
+                <img id="preview-image" alt="Vista previa" draggable="false" hidden />
+              </div>
+              <div class="preview-content">
+                <p class="preview-category" id="preview-category">Categoria</p>
+                <h3 id="preview-name">Nombre del producto</h3>
+                <p class="preview-description" id="preview-description">Descripcion del producto</p>
+                <div class="preview-footer">
+                  <strong id="preview-price">$0</strong>
+                  <span class="preview-add">Agregar</span>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div class="actions full">
+            <button type="submit" class="primary-btn">Guardar producto</button>
+            <button type="button" id="cancel-edit" class="ghost-btn" hidden>Cancelar edicion</button>
+          </div>
+        </form>
+
+        <div class="product-filters">
+          <label>
+            Buscar producto
+            <input id="admin-product-search" type="search" placeholder="Nombre o descripcion" />
+          </label>
+          <label>
+            Filtrar por categoria
+            <select id="admin-product-category-filter">
+              <option value="all">Todas</option>
+            </select>
+          </label>
+          <label>
+            Ordenar por
+            <select id="admin-product-sort">
+              <option value="date_desc">Mas recientes</option>
+              <option value="date_asc">Mas antiguos</option>
+              <option value="name_asc">Nombre A-Z</option>
+              <option value="name_desc">Nombre Z-A</option>
+              <option value="price_desc">Mayor precio</option>
+              <option value="price_asc">Menor precio</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="products-list" class="product-list"></div>
+      </section>
+    </main>
+
+    <script src="/assets/js/admin.js" defer></script>
+  </body>
+</html>
