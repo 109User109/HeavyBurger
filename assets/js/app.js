@@ -444,8 +444,11 @@ function checkoutByWhatsapp() {
   lines.push('');
   lines.push('*Total*');
   lines.push(formatMoney(totalAmount));
-  lines.push('');
-  lines.push('Espero la confirmación de mi pedido.');
+  const footerText = String(settings.whatsappFooter || '').trim();
+  if (footerText) {
+    lines.push('');
+    lines.push(footerText);
+  }
 
   const message = lines.join('\n');
   const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;

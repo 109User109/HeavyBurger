@@ -16,7 +16,7 @@ const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gi
 const DEFAULT_PRIMARY_COLOR = '#B8BDC6';
 const DEFAULT_SECONDARY_COLOR = '#D8B062';
 const ADMIN_USERNAME = sanitizeText(process.env.ADMIN_USERNAME, 'admin') || 'admin';
-const ADMIN_PASSWORD = sanitizeText(process.env.ADMIN_PASSWORD, 'admin123') || 'admin123';
+const ADMIN_PASSWORD = sanitizeText(process.env.ADMIN_PASSWORD, '') || 'admin123';
 const ADMIN_SESSION_COOKIE = 'admin_session';
 const ADMIN_SESSION_TTL_MS =
   Math.max(1, Number.parseInt(process.env.ADMIN_SESSION_TTL_MINUTES || '20', 10) || 20) * 60 * 1000;
