@@ -479,8 +479,17 @@ p {
   font-weight: 800;
   font-size: 1.03rem;
   min-width: 0;
-  overflow-wrap: anywhere;
+  display: block;
+  text-align: right;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
   line-height: 1.2;
+  scrollbar-width: none;
+}
+
+.price::-webkit-scrollbar {
+  display: none;
 }
 
 .add-btn,
