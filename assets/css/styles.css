@@ -468,28 +468,22 @@ p {
 }
 
 .card-footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 0.62rem;
+  gap: 0.5rem;
 }
 
 .price {
   color: var(--accent);
   font-weight: 800;
-  font-size: 1.03rem;
+  font-size: clamp(0.84rem, 2.2vw, 1.03rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  flex: 1 1 auto;
   min-width: 0;
-  display: block;
   text-align: right;
   white-space: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
   line-height: 1.2;
-  scrollbar-width: none;
-}
-
-.price::-webkit-scrollbar {
-  display: none;
 }
 
 .add-btn,
@@ -507,10 +501,10 @@ p {
   background: rgba(var(--theme-secondary-rgb), 0.12);
   color: var(--text);
   border-radius: 999px;
-  justify-self: end;
-  padding: 0.42rem 0.82rem;
+  flex: 0 0 auto;
+  padding: 0.4rem 0.7rem;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 }
