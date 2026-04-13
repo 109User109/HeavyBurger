@@ -434,7 +434,6 @@ p {
 
 .product-card:hover,
 .product-card:focus-within {
-  transform: translateY(-6px);
   border-color: rgba(var(--theme-secondary-rgb), 0.65);
   box-shadow: var(--shadow);
 }
@@ -506,14 +505,14 @@ p {
   font-weight: 700;
   font-size: 0.8rem;
   white-space: nowrap;
-  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, filter 0.2s ease;
 }
 
 .add-btn:hover,
 .add-btn:focus-visible {
-  transform: translateY(-1px);
   border-color: var(--accent);
   background: rgba(var(--theme-secondary-rgb), 0.2);
+  filter: brightness(1.04);
 }
 
 .no-results,
