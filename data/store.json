@@ -2,7 +2,7 @@
   "settings": {
     "storeName": "Heavy Burger",
     "whatsappNumber": "5493755657062",
-    "whatsappFooter": "Sigue disponible?",
+    "whatsappFooter": "Espero la confirmación de mi pedido!",
     "currency": "ARS",
     "currencySymbol": "$",
     "primaryColor": "#B8BDC6",
@@ -10,44 +10,20 @@
   },
   "categories": [
     {
-      "id": "cat-mnnqqhg4yj4q9o",
-      "slug": "remeras",
-      "name": "Remeras"
-    },
-    {
-      "id": "cat-mnntnc48jd45iu",
-      "slug": "pantalones",
-      "name": "Pantalones"
-    },
-    {
-      "id": "cat-mnntnpdarwkq3g",
-      "slug": "accesorios",
-      "name": "Accesorios"
-    },
-    {
-      "id": "cat-mnntny8fzrisjn",
-      "slug": "zapatillas",
-      "name": "Zapatillas"
+      "id": "cat-mnxkexjrezds8w",
+      "slug": "hamburguesas",
+      "name": "Hamburguesas"
     }
   ],
   "products": [
     {
-      "id": "prod-mnnqrr535zgdia",
-      "name": "Remera",
-      "description": "",
-      "price": 1600,
-      "categoryId": "cat-mnnqqhg4yj4q9o",
-      "image": "/uploads/1775513290788-16376425.jpg",
-      "createdAt": "2026-04-06T22:08:10.791Z"
-    },
-    {
-      "id": "prod-mnnvibb3jnbf5d",
-      "name": "Test",
-      "description": "",
-      "price": 10000,
-      "categoryId": "cat-mnntnpdarwkq3g",
-      "image": "/uploads/1775521248141-708171365.jpg",
-      "createdAt": "2026-04-07T00:20:48.447Z"
+      "id": "prod-mnxkfea9nst6w6",
+      "name": "Hamburguesa",
+      "description": "Pan, queso, lechuga, tomate, medallón",
+      "price": 12000,
+      "categoryId": "cat-mnxkexjrezds8w",
+      "image": "/uploads/1776107298318-608778130.jpg",
+      "createdAt": "2026-04-13T19:08:18.321Z"
     }
   ]
 }
