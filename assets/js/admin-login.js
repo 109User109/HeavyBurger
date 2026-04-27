@@ -1,5 +1,6 @@
 const state = {
   lockSeconds: 0,
+  lockReason: '',
   lockTicker: null,
   sessionPoller: null
 };
@@ -25,7 +26,7 @@ async function init() {
   }
 
   if (session.locked) {
-    lockAccess(session.retryAfterSeconds);
+    lockAccess(session.retryAfterSeconds, 'session');
   } else {
     unlockAccess();
     applyReasonFromQuery();
@@ -80,7 +81,12 @@ async function onSubmit(event) {
     showStatus('No se pudo iniciar sesion.', 'error');
   } catch (error) {
     if (error.status === 423) {
-      lockAccess(error.payload?.retryAfterSeconds || 0);
+      lockAccess(error.payload?.retryAfterSeconds || 0, 'session');
+      return;
+    }
+
+    if (error.status === 429) {
+      lockAccess(error.payload?.retryAfterSeconds || 0, 'rate');
       return;
     }
 
@@ -99,7 +105,7 @@ async function checkSessionStatusSilently() {
     }
 
     if (session.locked) {
-      lockAccess(session.retryAfterSeconds || 0);
+      lockAccess(session.retryAfterSeconds || 0, 'session');
       return;
     }
 
@@ -133,9 +139,10 @@ async function fetchSessionStatus() {
   }
 }
 
-function lockAccess(seconds) {
+function lockAccess(seconds, reason = 'session') {
   const next = Math.max(0, Number(seconds) || 0);
   state.lockSeconds = next;
+  state.lockReason = reason;
   renderLockMessage();
   dom.submit.disabled = state.lockSeconds > 0;
 
@@ -159,6 +166,7 @@ function lockAccess(seconds) {
 
 function unlockAccess() {
   state.lockSeconds = 0;
+  state.lockReason = '';
   dom.submit.disabled = false;
 
   if (state.lockTicker) {
@@ -169,6 +177,12 @@ function unlockAccess() {
 
 function renderLockMessage() {
   if (state.lockSeconds <= 0) return;
+
+  if (state.lockReason === 'rate') {
+    showStatus(`Demasiados intentos. Reintenta en ${formatDuration(state.lockSeconds)}.`, 'error');
+    return;
+  }
+
   showStatus(`Panel ocupado por otra sesion. Reintenta en ${formatDuration(state.lockSeconds)}.`, 'error');
 }
 
@@ -201,4 +215,3 @@ async function requestJson(url, options = {}) {
 
   return payload;
 }
-

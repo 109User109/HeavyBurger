@@ -8,6 +8,10 @@ const state = {
     categoryId: 'all',
     sort: 'date_desc'
   },
+  promotion: {
+    enabled: false,
+    draft: null
+  },
   image: {
     mode: 'none',
     url: '',
@@ -73,7 +77,24 @@ const dom = {
   previewCategory: document.getElementById('preview-category'),
   previewName: document.getElementById('preview-name'),
   previewDescription: document.getElementById('preview-description'),
-  previewPrice: document.getElementById('preview-price')
+  previewPrice: document.getElementById('preview-price'),
+  previewOriginalPrice: document.getElementById('preview-original-price'),
+  previewPromoBadge: document.getElementById('preview-promo-badge'),
+  promotionEnabled: document.getElementById('promotion-enabled'),
+  promotionSummary: document.getElementById('promotion-summary'),
+  configurePromotionBtn: document.getElementById('configure-promotion-btn'),
+  promotionModal: document.getElementById('promotion-modal'),
+  promotionModalBackdrop: document.getElementById('promotion-modal-backdrop'),
+  promotionModalClose: document.getElementById('promotion-modal-close'),
+  promotionModalCancel: document.getElementById('promotion-modal-cancel'),
+  promotionModalForm: document.getElementById('promotion-modal-form'),
+  promotionType: document.getElementById('promotion-type'),
+  promotionDiscountWrap: document.getElementById('promotion-discount-wrap'),
+  promotionDiscount: document.getElementById('promotion-discount'),
+  promotionFixedPriceWrap: document.getElementById('promotion-fixed-price-wrap'),
+  promotionFixedPrice: document.getElementById('promotion-fixed-price'),
+  promotionStart: document.getElementById('promotion-start'),
+  promotionEnd: document.getElementById('promotion-end')
 };
 
 init().catch((error) => {
@@ -143,8 +164,18 @@ function bindEvents() {
 
   dom.productForm.elements.name.addEventListener('input', renderPreviewCard);
   dom.productForm.elements.description.addEventListener('input', renderPreviewCard);
-  dom.productForm.elements.price.addEventListener('input', renderPreviewCard);
+  dom.productForm.elements.price.addEventListener('input', () => {
+    renderPromotionSummary();
+    renderPreviewCard();
+  });
   dom.productForm.elements.categoryId.addEventListener('change', renderPreviewCard);
+  dom.promotionEnabled.addEventListener('change', onPromotionEnabledChange);
+  dom.configurePromotionBtn.addEventListener('click', openPromotionModal);
+  dom.promotionModalBackdrop.addEventListener('click', closePromotionModal);
+  dom.promotionModalClose.addEventListener('click', closePromotionModal);
+  dom.promotionModalCancel.addEventListener('click', closePromotionModal);
+  dom.promotionType.addEventListener('change', onPromotionTypeChange);
+  dom.promotionModalForm.addEventListener('submit', onPromotionModalSubmit);
 
   dom.imageFileInput.addEventListener('change', (event) => onImageInputChange(event, 'gallery'));
   dom.cameraInput.addEventListener('change', (event) => onImageInputChange(event, 'camera'));
@@ -386,6 +417,7 @@ function renderAll() {
   renderProductCategorySelect();
   renderProductCategoryFilterOptions();
   renderProducts();
+  renderPromotionSummary();
   renderPreviewCard();
 }
 
@@ -533,8 +565,18 @@ function renderProducts() {
   }
 
   dom.productsList.innerHTML = visibleProducts
-    .map(
-      (product) => `
+    .map((product) => {
+      const promotionView = getPromotionPresentation(Number(product.price || 0), product.promotion);
+      const priceLabel = promotionView.isActive
+        ? `<span><s>${escapeHtml(formatMoney(product.price))}</s> <strong>${escapeHtml(
+            formatMoney(promotionView.finalPrice)
+          )}</strong></span>`
+        : `<span>${escapeHtml(formatMoney(product.price))}</span>`;
+      const promotionLabel = promotionView.isActive
+        ? `<span>Promo activa: ${escapeHtml(promotionView.badgeText)}</span>`
+        : '';
+
+      return `
       <article class="product-item" data-product-id="${product.id}">
         ${
           product.image
@@ -544,7 +586,8 @@ function renderProducts() {
         <div>
           <h3>${escapeHtml(product.name)}</h3>
           <div class="product-meta">
-            <span>${formatMoney(product.price)}</span>
+            ${priceLabel}
+            ${promotionLabel}
             <span>Categoria: ${escapeHtml(getCategoryName(product.categoryId))}</span>
             <span>Publicado: ${escapeHtml(formatDate(product.createdAt))}</span>
             <span>Extras configurados: ${normalizeProductExtras(product.extras).length}</span>
@@ -556,8 +599,8 @@ function renderProducts() {
           <button type="button" class="danger-btn" data-action="delete-product">Eliminar</button>
         </div>
       </article>
-    `
-    )
+    `;
+    })
     .join('');
 }
 
@@ -664,6 +707,366 @@ function collectProductExtrasFromEditor() {
   }
 
   return { ok: true, extras };
+}
+
+function onPromotionEnabledChange(event) {
+  const enabled = Boolean(event.target.checked);
+  state.promotion.enabled = enabled;
+  dom.configurePromotionBtn.disabled = !enabled;
+
+  if (!enabled) {
+    state.promotion.draft = null;
+    closePromotionModal();
+    renderPromotionSummary();
+    renderPreviewCard();
+    return;
+  }
+
+  ensurePromotionDraft();
+  renderPromotionSummary();
+  renderPreviewCard();
+  openPromotionModal();
+}
+
+function ensurePromotionDraft() {
+  if (state.promotion.draft) return;
+
+  const now = new Date();
+  now.setSeconds(0, 0);
+  const end = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const basePrice = Number(dom.productForm.elements.price.value);
+
+  state.promotion.draft = {
+    type: 'percentage',
+    discountPercentage: 10,
+    promotionalPrice: Number.isFinite(basePrice) && basePrice > 0 ? Number((basePrice * 0.9).toFixed(2)) : null,
+    startAt: now.toISOString(),
+    endAt: end.toISOString()
+  };
+}
+
+function onPromotionTypeChange() {
+  syncPromotionTypeVisibility(dom.promotionType.value);
+}
+
+function syncPromotionTypeVisibility(type) {
+  const isPercentage = type === 'percentage';
+  dom.promotionDiscountWrap.hidden = !isPercentage;
+  dom.promotionFixedPriceWrap.hidden = isPercentage;
+  dom.promotionDiscount.required = isPercentage;
+  dom.promotionFixedPrice.required = !isPercentage;
+}
+
+function openPromotionModal() {
+  if (!dom.promotionEnabled.checked) return;
+
+  ensurePromotionDraft();
+  const draft = state.promotion.draft;
+  if (!draft) return;
+
+  dom.promotionType.value = draft.type || 'percentage';
+  dom.promotionDiscount.value =
+    draft.discountPercentage !== null && draft.discountPercentage !== undefined ? String(draft.discountPercentage) : '';
+  dom.promotionFixedPrice.value =
+    draft.promotionalPrice !== null && draft.promotionalPrice !== undefined ? String(draft.promotionalPrice) : '';
+  dom.promotionStart.value = toLocalDateTimeInputValue(draft.startAt);
+  dom.promotionEnd.value = toLocalDateTimeInputValue(draft.endAt);
+
+  syncPromotionTypeVisibility(dom.promotionType.value);
+  dom.promotionModal.hidden = false;
+}
+
+function closePromotionModal() {
+  dom.promotionModal.hidden = true;
+}
+
+function toLocalDateTimeInputValue(isoValue) {
+  const timestamp = Date.parse(isoValue || '');
+  if (!Number.isFinite(timestamp)) return '';
+
+  const date = new Date(timestamp);
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+}
+
+function localDateTimeInputToIso(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+
+  const date = new Date(raw);
+  const timestamp = date.getTime();
+  if (!Number.isFinite(timestamp)) return '';
+
+  return date.toISOString();
+}
+
+function formatPromoDate(dateValue) {
+  const timestamp = Date.parse(dateValue || '');
+  if (!Number.isFinite(timestamp)) return 'sin fecha';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'short',
+    timeStyle: 'short'
+  }).format(new Date(timestamp));
+}
+
+function collectPromotionDraftFromModal() {
+  const type = String(dom.promotionType.value || '').trim();
+  const startAt = localDateTimeInputToIso(dom.promotionStart.value);
+  const endAt = localDateTimeInputToIso(dom.promotionEnd.value);
+  const basePrice = Number(dom.productForm.elements.price.value);
+
+  if (!Number.isFinite(basePrice) || basePrice < 0) {
+    return { ok: false, error: 'Define primero un precio normal valido para el producto.' };
+  }
+
+  if (!startAt || !endAt) {
+    return { ok: false, error: 'Completa fecha de inicio y fin de promocion.' };
+  }
+
+  const startTs = Date.parse(startAt);
+  const endTs = Date.parse(endAt);
+
+  if (!Number.isFinite(startTs) || !Number.isFinite(endTs) || startTs >= endTs) {
+    return { ok: false, error: 'La fecha de inicio debe ser menor que la fecha de fin.' };
+  }
+
+  if (endTs <= Date.now()) {
+    return { ok: false, error: 'La fecha de fin debe estar en el futuro.' };
+  }
+
+  if (type === 'percentage') {
+    const percentage = Number(dom.promotionDiscount.value);
+    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
+      return { ok: false, error: 'El descuento % debe ser mayor a 0 y menor o igual a 100.' };
+    }
+
+    return {
+      ok: true,
+      promotion: {
+        type: 'percentage',
+        discountPercentage: Number(percentage.toFixed(2)),
+        startAt,
+        endAt
+      }
+    };
+  }
+
+  if (type === 'fixed_price') {
+    const promotionalPrice = Number(dom.promotionFixedPrice.value);
+    if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0) {
+      return { ok: false, error: 'El precio promocional debe ser valido.' };
+    }
+
+    if (promotionalPrice >= basePrice) {
+      return { ok: false, error: 'El precio promocional debe ser menor al precio normal.' };
+    }
+
+    return {
+      ok: true,
+      promotion: {
+        type: 'fixed_price',
+        promotionalPrice: Number(promotionalPrice.toFixed(2)),
+        startAt,
+        endAt
+      }
+    };
+  }
+
+  return { ok: false, error: 'Selecciona un tipo de promocion valido.' };
+}
+
+function onPromotionModalSubmit(event) {
+  event.preventDefault();
+
+  const result = collectPromotionDraftFromModal();
+  if (!result.ok) {
+    showStatus(result.error, 'error');
+    return;
+  }
+
+  state.promotion.enabled = true;
+  state.promotion.draft = result.promotion;
+  dom.promotionEnabled.checked = true;
+  dom.configurePromotionBtn.disabled = false;
+
+  closePromotionModal();
+  renderPromotionSummary();
+  renderPreviewCard();
+  showStatus('Promocion configurada.', 'success');
+}
+
+function normalizePromotionDraft(rawPromotion, basePrice) {
+  if (!rawPromotion || typeof rawPromotion !== 'object') return null;
+
+  const type = String(rawPromotion.type || '').trim().toLowerCase();
+  const startTimestamp = Date.parse(rawPromotion.startAt || rawPromotion.startDate || '');
+  const endTimestamp = Date.parse(rawPromotion.endAt || rawPromotion.endDate || '');
+
+  if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) {
+    return null;
+  }
+
+  const startAt = new Date(startTimestamp).toISOString();
+  const endAt = new Date(endTimestamp).toISOString();
+
+  if (startTimestamp >= endTimestamp) return null;
+
+  if (type === 'percentage') {
+    const percentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
+    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) return null;
+
+    return {
+      type: 'percentage',
+      discountPercentage: Number(percentage.toFixed(2)),
+      startAt,
+      endAt
+    };
+  }
+
+  if (type === 'fixed_price') {
+    const promotionalPrice = Number(rawPromotion.promotionalPrice ?? rawPromotion.price);
+    if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0) return null;
+    if (Number.isFinite(basePrice) && promotionalPrice >= basePrice) return null;
+
+    return {
+      type: 'fixed_price',
+      promotionalPrice: Number(promotionalPrice.toFixed(2)),
+      startAt,
+      endAt
+    };
+  }
+
+  return null;
+}
+
+function isPromotionActive(promotion, nowMs = Date.now()) {
+  if (!promotion) return false;
+  const startTs = Date.parse(promotion.startAt || '');
+  const endTs = Date.parse(promotion.endAt || '');
+  if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) return false;
+
+  return nowMs >= startTs && nowMs <= endTs;
+}
+
+function formatPromotionBadgeFromPercentage(value) {
+  const percentage = Number(value);
+  if (!Number.isFinite(percentage)) return 'OFF';
+  const display = Number.isInteger(percentage) ? String(percentage) : percentage.toFixed(1);
+  return `${display}% OFF`;
+}
+
+function getPromotionPresentation(basePrice, promotion, nowMs = Date.now()) {
+  if (!Number.isFinite(basePrice) || basePrice < 0) {
+    return {
+      isActive: false,
+      finalPrice: 0,
+      badgeText: ''
+    };
+  }
+
+  const normalized = normalizePromotionDraft(promotion, basePrice);
+  if (!normalized || !isPromotionActive(normalized, nowMs)) {
+    return {
+      isActive: false,
+      finalPrice: Number(basePrice.toFixed(2)),
+      badgeText: ''
+    };
+  }
+
+  if (normalized.type === 'percentage') {
+    const discounted = basePrice * (1 - normalized.discountPercentage / 100);
+
+    return {
+      isActive: true,
+      finalPrice: Number(Math.max(0, discounted).toFixed(2)),
+      badgeText: formatPromotionBadgeFromPercentage(normalized.discountPercentage)
+    };
+  }
+
+  return {
+    isActive: true,
+    finalPrice: Number(normalized.promotionalPrice.toFixed(2)),
+    badgeText: 'Oferta'
+  };
+}
+
+function renderPromotionSummary() {
+  const basePrice = Number(dom.productForm.elements.price.value);
+
+  if (!dom.promotionEnabled.checked) {
+    dom.configurePromotionBtn.disabled = true;
+    dom.promotionSummary.textContent = 'Sin promocion configurada.';
+    return;
+  }
+
+  dom.configurePromotionBtn.disabled = false;
+
+  if (!state.promotion.draft) {
+    dom.promotionSummary.textContent = 'Promocion activada, falta configurar.';
+    return;
+  }
+
+  const normalized = normalizePromotionDraft(state.promotion.draft, basePrice);
+  if (!normalized) {
+    dom.promotionSummary.textContent = 'Promocion incompleta. Abre "Configurar promocion".';
+    return;
+  }
+
+  const detail =
+    normalized.type === 'percentage'
+      ? `${formatPromotionBadgeFromPercentage(normalized.discountPercentage)}`
+      : `Oferta: ${formatMoney(normalized.promotionalPrice)}`;
+
+  const active = isPromotionActive(normalized);
+  const stateText = active ? 'activa' : Date.now() < Date.parse(normalized.startAt) ? 'programada' : 'vencida';
+
+  dom.promotionSummary.textContent =
+    `${detail} (${stateText}) · ${formatPromoDate(normalized.startAt)} a ${formatPromoDate(normalized.endAt)}`;
+}
+
+function collectPromotionPayloadForSubmit() {
+  if (!dom.promotionEnabled.checked) {
+    return { ok: true, promotion: null };
+  }
+
+  if (!state.promotion.draft) {
+    return { ok: false, error: 'Activaste promocion pero falta configurarla.' };
+  }
+
+  const basePrice = Number(dom.productForm.elements.price.value);
+  const normalized = normalizePromotionDraft(state.promotion.draft, basePrice);
+  if (!normalized) {
+    return { ok: false, error: 'La promocion configurada no es valida para el precio actual.' };
+  }
+
+  if (Date.parse(normalized.endAt) <= Date.now()) {
+    return { ok: false, error: 'La promocion ya vencio. Ajusta la fecha de fin.' };
+  }
+
+  return { ok: true, promotion: normalized };
+}
+
+function fillPromotionEditorFromProduct(product) {
+  closePromotionModal();
+
+  const basePrice = Number(product?.price);
+  const normalized = normalizePromotionDraft(product?.promotion, basePrice);
+
+  if (!normalized) {
+    state.promotion.enabled = false;
+    state.promotion.draft = null;
+    dom.promotionEnabled.checked = false;
+    dom.configurePromotionBtn.disabled = true;
+    renderPromotionSummary();
+    return;
+  }
+
+  state.promotion.enabled = true;
+  state.promotion.draft = normalized;
+  dom.promotionEnabled.checked = true;
+  dom.configurePromotionBtn.disabled = false;
+  renderPromotionSummary();
 }
 
 function getCategoryName(categoryId) {
@@ -854,12 +1257,19 @@ async function onSaveProduct(event) {
     return;
   }
 
+  const promotionResult = collectPromotionPayloadForSubmit();
+  if (!promotionResult.ok) {
+    showStatus(promotionResult.error, 'error');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('name', name);
   formData.append('description', description);
   formData.append('price', String(price));
   formData.append('categoryId', categoryId);
   formData.append('extras', JSON.stringify(extrasResult.extras));
+  formData.append('promotion', promotionResult.promotion ? JSON.stringify(promotionResult.promotion) : '');
   formData.append('removeImage', removeImage ? 'true' : 'false');
 
   if (!removeImage && shouldUploadEditedImage()) {
@@ -949,6 +1359,7 @@ async function loadProductIntoForm(productId) {
   form.elements.price.value = product.price;
   form.elements.categoryId.value = product.categoryId;
   renderProductExtrasEditor(normalizeProductExtras(product.extras));
+  fillPromotionEditorFromProduct(product);
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
   form.elements.removeImage.checked = false;
@@ -974,6 +1385,11 @@ function resetProductForm() {
   dom.productForm.elements.productId.value = '';
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
+  dom.promotionEnabled.checked = false;
+  dom.configurePromotionBtn.disabled = true;
+  state.promotion.enabled = false;
+  state.promotion.draft = null;
+  closePromotionModal();
   renderProductExtrasEditor([]);
 
   if (state.store?.categories?.[0]) {
@@ -985,6 +1401,7 @@ function resetProductForm() {
   dom.cancelEdit.hidden = true;
   dom.productForm.querySelector('button[type="submit"]').textContent = 'Guardar producto';
 
+  renderPromotionSummary();
   renderPreviewCard();
 }
 
@@ -1319,11 +1736,26 @@ function renderPreviewCard() {
   const description = form.elements.description.value.trim() || 'Descripcion del producto';
   const rawPrice = Number(form.elements.price.value);
   const category = state.store.categories.find((item) => item.id === form.elements.categoryId.value);
+  const basePrice = Number.isFinite(rawPrice) && rawPrice >= 0 ? Number(rawPrice.toFixed(2)) : 0;
+  const promotionData = dom.promotionEnabled.checked ? state.promotion.draft : null;
+  const promotionView = getPromotionPresentation(basePrice, promotionData);
 
   dom.previewName.textContent = name;
   dom.previewDescription.textContent = description;
   dom.previewCategory.textContent = category ? category.name : 'Categoria';
-  dom.previewPrice.textContent = Number.isFinite(rawPrice) && rawPrice >= 0 ? formatMoney(rawPrice) : '$0';
+  dom.previewPrice.textContent = Number.isFinite(rawPrice) && rawPrice >= 0 ? formatMoney(promotionView.finalPrice) : '$0';
+
+  if (promotionView.isActive) {
+    dom.previewOriginalPrice.hidden = false;
+    dom.previewOriginalPrice.textContent = formatMoney(basePrice);
+    dom.previewPromoBadge.hidden = false;
+    dom.previewPromoBadge.textContent = promotionView.badgeText;
+  } else {
+    dom.previewOriginalPrice.hidden = true;
+    dom.previewOriginalPrice.textContent = '';
+    dom.previewPromoBadge.hidden = true;
+    dom.previewPromoBadge.textContent = 'Oferta';
+  }
 
   const shouldHideImage = dom.productForm.elements.removeImage.checked || !state.image.url;
 

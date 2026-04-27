@@ -199,7 +199,8 @@ async function loadStore() {
 
   state.store.products = state.store.products.map((product) => ({
     ...product,
-    extras: normalizeProductExtras(product.extras)
+    extras: normalizeProductExtras(product.extras),
+    promotion: normalizePromotion(product.promotion, Number(product.price))
   }));
 
   applyThemeFromSettings(state.store.settings || {});
@@ -322,6 +323,105 @@ function normalizeProductExtras(rawExtras) {
   return normalized;
 }
 
+function normalizePromotion(rawPromotion, basePrice) {
+  if (!rawPromotion || typeof rawPromotion !== 'object') return null;
+
+  const type = String(rawPromotion.type || '').trim().toLowerCase();
+  const startTimestamp = Date.parse(rawPromotion.startAt || rawPromotion.startDate || '');
+  const endTimestamp = Date.parse(rawPromotion.endAt || rawPromotion.endDate || '');
+
+  if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) return null;
+  if (startTimestamp >= endTimestamp) return null;
+
+  if (type === 'percentage') {
+    const discountPercentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
+    if (!Number.isFinite(discountPercentage) || discountPercentage <= 0 || discountPercentage > 100) return null;
+
+    return {
+      type: 'percentage',
+      discountPercentage: Number(discountPercentage.toFixed(2)),
+      startAt: new Date(startTimestamp).toISOString(),
+      endAt: new Date(endTimestamp).toISOString()
+    };
+  }
+
+  if (type === 'fixed_price') {
+    const promotionalPrice = Number(rawPromotion.promotionalPrice ?? rawPromotion.price);
+    if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0) return null;
+    if (Number.isFinite(basePrice) && promotionalPrice >= basePrice) return null;
+
+    return {
+      type: 'fixed_price',
+      promotionalPrice: Number(promotionalPrice.toFixed(2)),
+      startAt: new Date(startTimestamp).toISOString(),
+      endAt: new Date(endTimestamp).toISOString()
+    };
+  }
+
+  return null;
+}
+
+function formatPromotionBadge(discountPercentage) {
+  const percentage = Number(discountPercentage);
+  if (!Number.isFinite(percentage)) return 'Oferta';
+  const display = Number.isInteger(percentage) ? String(percentage) : percentage.toFixed(1);
+  return `${display}% OFF`;
+}
+
+function getEffectiveProductPricing(product, nowMs = Date.now()) {
+  const basePrice = Number(product?.price);
+
+  if (!Number.isFinite(basePrice) || basePrice < 0) {
+    return {
+      hasPromotion: false,
+      originalPrice: 0,
+      finalPrice: 0,
+      badgeText: ''
+    };
+  }
+
+  const promotion = normalizePromotion(product?.promotion, basePrice);
+  if (!promotion) {
+    return {
+      hasPromotion: false,
+      originalPrice: Number(basePrice.toFixed(2)),
+      finalPrice: Number(basePrice.toFixed(2)),
+      badgeText: ''
+    };
+  }
+
+  const startTs = Date.parse(promotion.startAt);
+  const endTs = Date.parse(promotion.endAt);
+  const isActive = nowMs >= startTs && nowMs <= endTs;
+
+  if (!isActive) {
+    return {
+      hasPromotion: false,
+      originalPrice: Number(basePrice.toFixed(2)),
+      finalPrice: Number(basePrice.toFixed(2)),
+      badgeText: ''
+    };
+  }
+
+  if (promotion.type === 'percentage') {
+    const finalPrice = Number((basePrice * (1 - promotion.discountPercentage / 100)).toFixed(2));
+
+    return {
+      hasPromotion: true,
+      originalPrice: Number(basePrice.toFixed(2)),
+      finalPrice: Math.max(0, finalPrice),
+      badgeText: formatPromotionBadge(promotion.discountPercentage)
+    };
+  }
+
+  return {
+    hasPromotion: true,
+    originalPrice: Number(basePrice.toFixed(2)),
+    finalPrice: Number(promotion.promotionalPrice.toFixed(2)),
+    badgeText: 'Oferta'
+  };
+}
+
 function getCategoryName(categoryId) {
   const category = state.store.categories.find((item) => item.id === categoryId);
   return category ? category.name : 'Sin categoria';
@@ -378,15 +478,35 @@ function renderProducts() {
     const thumb = node.querySelector('.thumb');
 
     if (product.image) {
-      thumb.innerHTML = `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" loading="lazy" />`;
+      thumb.innerHTML = `<span class="promo-badge" hidden>Oferta</span><img src="${escapeAttribute(
+        product.image
+      )}" alt="${escapeAttribute(product.name)}" loading="lazy" />`;
     } else {
-      thumb.textContent = 'Sin imagen';
+      thumb.innerHTML = '<span class="promo-badge" hidden>Oferta</span>Sin imagen';
     }
 
     node.querySelector('.category').textContent = getCategoryName(product.categoryId);
     node.querySelector('h3').textContent = product.name;
     node.querySelector('.description').textContent = product.description || 'Sin descripcion';
-    node.querySelector('.price').textContent = formatMoney(product.price);
+    const pricing = getEffectiveProductPricing(product);
+    const priceElement = node.querySelector('.price');
+    const promoBadge = node.querySelector('.promo-badge');
+
+    if (pricing.hasPromotion) {
+      priceElement.innerHTML = `<span class="price-old">${escapeHtml(
+        formatMoney(pricing.originalPrice)
+      )}</span><strong class="price-current">${escapeHtml(formatMoney(pricing.finalPrice))}</strong>`;
+      if (promoBadge) {
+        promoBadge.hidden = false;
+        promoBadge.textContent = pricing.badgeText;
+      }
+    } else {
+      priceElement.textContent = formatMoney(pricing.finalPrice);
+      if (promoBadge) {
+        promoBadge.hidden = true;
+        promoBadge.textContent = '';
+      }
+    }
 
     const addButton = node.querySelector('.add-btn');
     addButton.dataset.productId = product.id;
@@ -408,9 +528,10 @@ function openProductConfigurator(productId) {
 
   state.configurator.productId = product.id;
   state.configurator.extras = normalizeProductExtras(product.extras);
+  const pricing = getEffectiveProductPricing(product);
 
   dom.configProductName.textContent = product.name;
-  dom.configBasePrice.textContent = `Precio base: ${formatMoney(product.price)}`;
+  dom.configBasePrice.textContent = `Precio base: ${formatMoney(pricing.finalPrice)}`;
   dom.configNote.value = '';
   dom.configQuantity.value = '1';
 
@@ -508,7 +629,8 @@ function updateProductConfiguratorTotal() {
   const quantity = readConfiguratorQuantity();
   const selectedExtras = getSelectedConfiguratorExtras();
   const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
-  const unitPrice = product.price + extrasTotal;
+  const basePrice = getEffectiveProductPricing(product).finalPrice;
+  const unitPrice = basePrice + extrasTotal;
   const itemTotal = unitPrice * quantity;
 
   dom.configTotalPrice.textContent = formatMoney(itemTotal);
@@ -627,7 +749,8 @@ function renderCart() {
 
     const extras = normalizeCartExtras(cartItem.extras);
     const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
-    const unitPrice = product.price + extrasTotal;
+    const basePrice = getEffectiveProductPricing(product).finalPrice;
+    const unitPrice = basePrice + extrasTotal;
     const subtotal = unitPrice * cartItem.quantity;
 
     totalItems += cartItem.quantity;
@@ -715,7 +838,8 @@ function checkoutByWhatsapp() {
 
     const extras = normalizeCartExtras(cartItem.extras);
     const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
-    const unitPrice = product.price + extrasTotal;
+    const basePrice = getEffectiveProductPricing(product).finalPrice;
+    const unitPrice = basePrice + extrasTotal;
     const subtotal = unitPrice * cartItem.quantity;
 
     totalAmount += subtotal;

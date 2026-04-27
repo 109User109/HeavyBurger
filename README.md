@@ -73,6 +73,46 @@ set ADMIN_SESSION_TTL_MINUTES=20
 npm start
 ```
 
+## Deploy en Render (paso a paso)
+
+### Opcion A: Dashboard (recomendada para primer deploy)
+
+1. Sube el proyecto a GitHub (rama principal).
+2. En Render: `New` -> `Web Service`.
+3. Conecta tu repo y selecciona la rama.
+4. Configura:
+   - Runtime: `Node`
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+5. En `Environment` agrega:
+   - `NODE_ENV=production`
+   - `PERSISTENT_STORAGE_PATH=/var/data`
+   - `ADMIN_COOKIE_SECURE=true`
+   - `TRUST_PROXY_HOPS=1`
+   - `ADMIN_USERNAME` (tu usuario)
+   - `ADMIN_PASSWORD` (tu clave fuerte)
+6. En `Disks` agrega un disco persistente:
+   - Mount Path: `/var/data`
+   - Size: `1 GB` (o mas segun necesidad)
+7. Deploy.
+
+Notas importantes:
+- En Render, sin disco persistente los archivos locales se pierden al redeploy/restart.
+- El disco persistente en web services requiere un plan pago en Render.
+- Con esta configuracion, la app persiste:
+  - `store.json` en `/var/data/data/store.json`
+  - imagenes en `/var/data/uploads`
+
+### Opcion B: Blueprint (render.yaml)
+
+Este repo ya incluye [`render.yaml`](./render.yaml) con:
+- Web Service Node
+- Health check en `/healthz`
+- Disco persistente montado en `/var/data`
+- Variables de entorno base
+
+Solo debes crear el servicio desde Blueprint y completar secretos (`ADMIN_USERNAME`, `ADMIN_PASSWORD`).
+
 ## Rutas
 
 - Tienda: `http://localhost:3000/`

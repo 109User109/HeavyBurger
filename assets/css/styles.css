@@ -422,6 +422,7 @@ p {
   place-items: center;
   color: var(--muted);
   font-size: 0.75rem;
+  position: relative;
 }
 
 .thumb img {
@@ -432,6 +433,20 @@ p {
   filter: saturate(0.92);
   transform: scale(1);
   transition: transform 0.45s ease, filter 0.45s ease;
+}
+
+.promo-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  z-index: 1;
+  border-radius: 999px;
+  padding: 0.2rem 0.46rem;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #111;
+  background: rgba(var(--theme-secondary-rgb), 0.96);
 }
 
 .content {
@@ -491,6 +506,20 @@ p {
   text-align: right;
   white-space: nowrap;
   line-height: 1.2;
+  display: grid;
+  justify-items: end;
+}
+
+.price-old {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-decoration: line-through;
+}
+
+.price-current {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: clamp(0.84rem, 2.2vw, 1.03rem);
 }
 
 .add-btn,

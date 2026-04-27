@@ -8,34 +8,6 @@
     "primaryColor": "#B8BDC6",
     "secondaryColor": "#D8B062"
   },
-  "categories": [
-    {
-      "id": "cat-mnxkexjrezds8w",
-      "slug": "hamburguesas",
-      "name": "Hamburguesas"
-    }
-  ],
-  "products": [
-    {
-      "id": "prod-mnxmj6bo4bslg9",
-      "name": "Hamburguesa",
-      "description": "test",
-      "price": 12000,
-      "categoryId": "cat-mnxkexjrezds8w",
-      "extras": [
-        {
-          "id": "extra-mnxmj6bokl0g21",
-          "name": "Pepino",
-          "price": 1000
-        },
-        {
-          "id": "extra-mnxmj6bo2ios2j",
-          "name": "Cheddar",
-          "price": 1000
-        }
-      ],
-      "image": "/uploads/1776110833856-32750207.jpg",
-      "createdAt": "2026-04-13T20:07:13.860Z"
-    }
-  ]
+  "categories": [],
+  "products": []
 }

@@ -161,6 +161,19 @@
             <input type="number" name="price" min="0" step="0.01" required />
           </label>
 
+          <section class="full promotion-editor">
+            <label class="checkbox-row">
+              <input id="promotion-enabled" type="checkbox" name="promotionEnabled" />
+              Activar promocion
+            </label>
+            <div class="promotion-row">
+              <p id="promotion-summary" class="muted">Sin promocion configurada.</p>
+              <button id="configure-promotion-btn" type="button" class="outline-btn" disabled>
+                Configurar promocion
+              </button>
+            </div>
+          </section>
+
           <label class="full">
             Descripcion
             <textarea name="description" rows="3" placeholder="Descripcion breve"></textarea>
@@ -230,6 +243,7 @@
             <article class="preview-card" id="preview-card">
               <div class="preview-thumb" id="preview-thumb">
                 <span class="preview-empty" id="preview-empty">Sin imagen</span>
+                <span id="preview-promo-badge" class="preview-promo-badge" hidden>Oferta</span>
                 <img id="preview-image" alt="Vista previa" draggable="false" hidden />
               </div>
               <div class="preview-content">
@@ -237,7 +251,10 @@
                 <h3 id="preview-name">Nombre del producto</h3>
                 <p class="preview-description" id="preview-description">Descripcion del producto</p>
                 <div class="preview-footer">
-                  <strong id="preview-price">$0</strong>
+                  <div class="preview-price-wrap">
+                    <span id="preview-original-price" class="preview-original-price" hidden>$0</span>
+                    <strong id="preview-price">$0</strong>
+                  </div>
                   <span class="preview-add">Agregar</span>
                 </div>
               </div>
@@ -277,6 +294,53 @@
         <div id="products-list" class="product-list"></div>
       </section>
     </main>
+
+    <div id="promotion-modal" class="promotion-modal" hidden>
+      <button id="promotion-modal-backdrop" class="promotion-modal-backdrop" type="button"></button>
+      <section class="promotion-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="promotion-modal-title">
+        <header class="promotion-modal-header">
+          <h3 id="promotion-modal-title">Configurar promocion</h3>
+          <button id="promotion-modal-close" class="icon-close-btn" type="button" aria-label="Cerrar">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </header>
+
+        <form id="promotion-modal-form" class="promotion-modal-form">
+          <label>
+            Tipo de promocion
+            <select id="promotion-type" required>
+              <option value="percentage">Descuento % (sobre precio original)</option>
+              <option value="fixed_price">Precio promocional (manual)</option>
+            </select>
+          </label>
+
+          <label id="promotion-discount-wrap">
+            Descuento en porcentaje
+            <input id="promotion-discount" type="number" min="0.01" max="100" step="0.01" placeholder="Ej: 50" />
+          </label>
+
+          <label id="promotion-fixed-price-wrap" hidden>
+            Precio promocional
+            <input id="promotion-fixed-price" type="number" min="0" step="0.01" placeholder="Ej: 7999" />
+          </label>
+
+          <label>
+            Fecha de inicio de promo
+            <input id="promotion-start" type="datetime-local" required />
+          </label>
+
+          <label>
+            Fecha de fin de promo
+            <input id="promotion-end" type="datetime-local" required />
+          </label>
+
+          <div class="actions">
+            <button id="promotion-modal-cancel" type="button" class="ghost-btn">Cancelar</button>
+            <button type="submit" class="primary-btn">Guardar promocion</button>
+          </div>
+        </form>
+      </section>
+    </div>
 
     <script src="/assets/js/admin.js" defer></script>
   </body>
