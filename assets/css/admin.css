@@ -1,19 +1,19 @@
 ﻿:root {
   color-scheme: dark;
-  --theme-primary: #8d97a6;
-  --theme-secondary: #2dd4bf;
-  --theme-primary-rgb: 141, 151, 166;
-  --theme-secondary-rgb: 45, 212, 191;
-  --theme-secondary-light: #6be3d4;
-  --bg: #070a0e;
-  --panel: #10151d;
-  --panel-soft: #0e131a;
-  --text: #ebf2ff;
-  --muted: var(--theme-primary);
+  --theme-primary: #15314b;
+  --theme-secondary: #3d8fcf;
+  --theme-primary-rgb: 21, 49, 75;
+  --theme-secondary-rgb: 61, 143, 207;
+  --theme-secondary-light: #74acd8;
+  --bg: #08182a;
+  --panel: #10243a;
+  --panel-soft: #0d1e32;
+  --text: #eef6ff;
+  --muted: #bfd0e2;
   --accent: var(--theme-secondary);
   --accent-soft: rgba(var(--theme-secondary-rgb), 0.2);
   --danger: #fb7185;
-  --border: rgba(var(--theme-primary-rgb), 0.24);
+  --border: rgba(166, 198, 225, 0.26);
 }
 
 * {
@@ -28,7 +28,7 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top right, #141f2b 0%, #070a0e 60%);
+  background: radial-gradient(circle at top right, #163653 0%, #08182a 62%);
   color: var(--text);
 }
 
@@ -389,7 +389,7 @@ input.invalid {
 
 .primary-btn {
   background: linear-gradient(130deg, var(--theme-secondary), var(--theme-secondary-light));
-  color: #072116;
+  color: #f2f8ff;
   font-weight: 700;
 }
 
@@ -502,7 +502,7 @@ input.invalid {
   font-weight: 700;
   letter-spacing: 0.04em;
   background: rgba(var(--theme-secondary-rgb), 0.96);
-  color: #0a1b13;
+  color: #f2f8ff;
 }
 
 .preview-thumb.adjusting {

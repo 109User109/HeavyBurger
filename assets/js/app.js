@@ -12,8 +12,8 @@
   }
 };
 
-const DEFAULT_PRIMARY_COLOR = '#B8BDC6';
-const DEFAULT_SECONDARY_COLOR = '#D8B062';
+const DEFAULT_PRIMARY_COLOR = '#15314B';
+const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
 
 const dom = {
   storeName: document.getElementById('store-name'),

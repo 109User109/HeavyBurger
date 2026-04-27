@@ -37,8 +37,8 @@ const state = {
   }
 };
 
-const DEFAULT_PRIMARY_COLOR = '#B8BDC6';
-const DEFAULT_SECONDARY_COLOR = '#D8B062';
+const DEFAULT_PRIMARY_COLOR = '#15314B';
+const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
 const HEARTBEAT_INTERVAL_MS = 60000;
 
 const dom = {
