@@ -10,55 +10,230 @@
   },
   "categories": [
     {
-      "id": "cat-moiu59ybn7krun",
+      "id": "cat-hamburguesas",
       "slug": "hamburguesas",
       "name": "Hamburguesas"
     }
   ],
   "products": [
     {
-      "id": "prod-moiu6d17fsidbi",
+      "id": "prod-cheesy",
       "name": "Cheesy",
       "description": "pan de papa, carne, cheddar",
-      "price": 8000,
+      "price": 7500.0,
       "productMode": "variants",
       "variants": [
         {
-          "id": "variant-moiu7dane9j6id",
+          "id": "var-cheesy-simple",
           "name": "Simple",
-          "price": 8000
+          "price": 7500.0
         },
         {
-          "id": "variant-moiu7danhapvwz",
+          "id": "var-cheesy-doble",
           "name": "Doble",
-          "price": 11500
+          "price": 10000.0
         },
         {
-          "id": "variant-moiu7danivwlct",
+          "id": "var-cheesy-triple",
           "name": "Triple",
-          "price": 13000
+          "price": 12000.0
         }
       ],
-      "categoryId": "cat-moiu59ybn7krun",
-      "extras": [
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:05.124679Z"
+    },
+    {
+      "id": "prod-urban",
+      "name": "Urban",
+      "description": "pan de papa, carne, cheddar, bacon, huevo",
+      "price": 9500.0,
+      "productMode": "variants",
+      "variants": [
         {
-          "id": "extra-moiu7danhz44t3",
-          "name": "Cheddar",
-          "price": 500
+          "id": "var-urban-simple",
+          "name": "Simple",
+          "price": 9500.0
         },
         {
-          "id": "extra-moiu7danxpkpqg",
-          "name": "Bacon",
-          "price": 1000
+          "id": "var-urban-doble",
+          "name": "Doble",
+          "price": 12000.0
         },
         {
-          "id": "extra-moiu7dan4ataen",
-          "name": "Carne",
-          "price": 2000
+          "id": "var-urban-triple",
+          "name": "Triple",
+          "price": 14000.0
         }
       ],
-      "image": "/uploads/1777393462647-521974750.jpg",
-      "createdAt": "2026-04-28T16:24:22.651Z"
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:06.124679Z"
+    },
+    {
+      "id": "prod-fundida",
+      "name": "Fundida",
+      "description": "pan de papa, carne, cheddar, bacon",
+      "price": 8500.0,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-fundida-simple",
+          "name": "Simple",
+          "price": 8500.0
+        },
+        {
+          "id": "var-fundida-doble",
+          "name": "Doble",
+          "price": 11000.0
+        },
+        {
+          "id": "var-fundida-triple",
+          "name": "Triple",
+          "price": 13000.0
+        }
+      ],
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:07.124679Z"
+    },
+    {
+      "id": "prod-matona",
+      "name": "Matona",
+      "description": "pan de papa, carne, cheddar, bacon, huevo, lechuga, tomate",
+      "price": 11000.0,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-matona-simple",
+          "name": "Simple",
+          "price": 11000.0
+        },
+        {
+          "id": "var-matona-doble",
+          "name": "Doble",
+          "price": 12500.0
+        },
+        {
+          "id": "var-matona-triple",
+          "name": "Triple",
+          "price": 14500.0
+        }
+      ],
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:08.124679Z"
+    },
+    {
+      "id": "prod-canchera",
+      "name": "Canchera",
+      "description": "pan de papa, carne, queso tybo, jamón, lechuga, tomate",
+      "price": 10000.0,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-canchera-simple",
+          "name": "Simple",
+          "price": 10000.0
+        },
+        {
+          "id": "var-canchera-doble",
+          "name": "Doble",
+          "price": 12500.0
+        },
+        {
+          "id": "var-canchera-triple",
+          "name": "Triple",
+          "price": 13000.0
+        }
+      ],
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:09.124679Z"
+    },
+    {
+      "id": "prod-heavy-melt",
+      "name": "Heavy Melt",
+      "description": "pan de papa, carne, cheddar (x3), bacon, cebolla caramelizada, salsa melt",
+      "price": 11000.0,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-heavy-melt-simple",
+          "name": "Simple",
+          "price": 11000.0
+        },
+        {
+          "id": "var-heavy-melt-doble",
+          "name": "Doble",
+          "price": 14500.0
+        },
+        {
+          "id": "var-heavy-melt-triple",
+          "name": "Triple",
+          "price": 16500.0
+        }
+      ],
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:10.124679Z"
+    },
+    {
+      "id": "prod-fort",
+      "name": "Fort",
+      "description": "pan de papa, carne, queso azul, rúcula, salsa fort",
+      "price": 12500.0,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-fort-simple",
+          "name": "Simple",
+          "price": 12500.0
+        },
+        {
+          "id": "var-fort-doble",
+          "name": "Doble",
+          "price": 16000.0
+        },
+        {
+          "id": "var-fort-triple",
+          "name": "Triple",
+          "price": 19000.0
+        }
+      ],
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:11.124679Z"
+    },
+    {
+      "id": "prod-heavy-roots",
+      "name": "Heavy Roots",
+      "description": "pan de papa, carne 150gr, cheddar (x4), bacon (x3), huevo, cebolla caramelizada, salsa heavy",
+      "price": 17000.0,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-heavy-roots-simple",
+          "name": "Simple",
+          "price": 17000.0
+        },
+        {
+          "id": "var-heavy-roots-doble",
+          "name": "Doble",
+          "price": 28000.0
+        }
+      ],
+      "categoryId": "cat-hamburguesas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-28T17:15:12.124679Z"
     }
   ]
 }
