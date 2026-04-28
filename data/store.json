@@ -5,9 +5,60 @@
     "whatsappFooter": "Espero la confirmación de mi pedido!",
     "currency": "ARS",
     "currencySymbol": "$",
-    "primaryColor": "#15314B",
-    "secondaryColor": "#2E7EB8"
+    "primaryColor": "#B8BDC6",
+    "secondaryColor": "#D8B062"
   },
-  "categories": [],
-  "products": []
+  "categories": [
+    {
+      "id": "cat-moiu59ybn7krun",
+      "slug": "hamburguesas",
+      "name": "Hamburguesas"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-moiu6d17fsidbi",
+      "name": "Cheesy",
+      "description": "pan de papa, carne, cheddar",
+      "price": 8000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "variant-moiu7dane9j6id",
+          "name": "Simple",
+          "price": 8000
+        },
+        {
+          "id": "variant-moiu7danhapvwz",
+          "name": "Doble",
+          "price": 11500
+        },
+        {
+          "id": "variant-moiu7danivwlct",
+          "name": "Triple",
+          "price": 13000
+        }
+      ],
+      "categoryId": "cat-moiu59ybn7krun",
+      "extras": [
+        {
+          "id": "extra-moiu7danhz44t3",
+          "name": "Cheddar",
+          "price": 500
+        },
+        {
+          "id": "extra-moiu7danxpkpqg",
+          "name": "Bacon",
+          "price": 1000
+        },
+        {
+          "id": "extra-moiu7dan4ataen",
+          "name": "Carne",
+          "price": 2000
+        }
+      ],
+      "image": "/uploads/1777393462647-521974750.jpg",
+      "createdAt": "2026-04-28T16:24:22.651Z"
+    }
+  ]
 }

@@ -24,6 +24,9 @@ const UPLOADS_DIR = path.join(STORAGE_ROOT, 'uploads');
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
 const ALLOWED_PROMOTION_TYPES = new Set(['percentage', 'fixed_price']);
+const PRODUCT_MODE_SINGLE = 'single';
+const PRODUCT_MODE_VARIANTS = 'variants';
+const ALLOWED_PRODUCT_MODES = new Set([PRODUCT_MODE_SINGLE, PRODUCT_MODE_VARIANTS]);
 const DEFAULT_PRIMARY_COLOR = '#15314B';
 const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
 const ADMIN_USERNAME = sanitizeText(process.env.ADMIN_USERNAME, 'admin') || 'admin';
@@ -149,6 +152,114 @@ function parseExtrasPayload(rawExtras) {
       name,
       price
     });
+  }
+
+  return normalized;
+}
+
+function normalizeProductVariants(rawVariants) {
+  if (!Array.isArray(rawVariants)) return [];
+
+  const normalized = [];
+
+  for (let index = 0; index < rawVariants.length; index += 1) {
+    const variant = rawVariants[index];
+    const name = sanitizeText(variant?.name);
+    const price = sanitizePrice(variant?.price);
+
+    if (!name || price === null) continue;
+
+    const fallbackIdBase = slugify(name) || `variant-${index + 1}`;
+    const id = sanitizeText(variant?.id, `${fallbackIdBase}-${index + 1}`);
+
+    normalized.push({
+      id,
+      name,
+      price
+    });
+  }
+
+  return normalized;
+}
+
+function parseVariantsPayload(rawVariants) {
+  if (rawVariants === undefined || rawVariants === null || rawVariants === '') {
+    return [];
+  }
+
+  let parsed = rawVariants;
+
+  if (typeof rawVariants === 'string') {
+    try {
+      parsed = JSON.parse(rawVariants);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!Array.isArray(parsed)) {
+    return null;
+  }
+
+  const normalized = [];
+
+  for (const variant of parsed) {
+    const name = sanitizeText(variant?.name);
+    const price = sanitizePrice(variant?.price);
+
+    if (!name || price === null) {
+      return null;
+    }
+
+    normalized.push({
+      id: makeId('variant'),
+      name,
+      price
+    });
+  }
+
+  return normalized;
+}
+
+function resolveProductMode(rawMode, variants = []) {
+  const mode = sanitizeText(rawMode, '').toLowerCase();
+
+  if (!ALLOWED_PRODUCT_MODES.has(mode)) {
+    return variants.length ? PRODUCT_MODE_VARIANTS : PRODUCT_MODE_SINGLE;
+  }
+
+  if (mode === PRODUCT_MODE_VARIANTS) {
+    return variants.length ? PRODUCT_MODE_VARIANTS : PRODUCT_MODE_SINGLE;
+  }
+
+  if (mode === PRODUCT_MODE_SINGLE) return PRODUCT_MODE_SINGLE;
+
+  return variants.length ? PRODUCT_MODE_VARIANTS : PRODUCT_MODE_SINGLE;
+}
+
+function normalizeProductForStore(rawProduct = {}, nowMs = Date.now()) {
+  const product = rawProduct && typeof rawProduct === 'object' ? rawProduct : {};
+  const variants = normalizeProductVariants(product.variants);
+  const productMode = resolveProductMode(product.productMode, variants);
+  const basePrice =
+    productMode === PRODUCT_MODE_VARIANTS && variants.length
+      ? variants[0].price
+      : sanitizePrice(product.price);
+  const safePrice = basePrice === null ? 0 : basePrice;
+  const normalizedPromotion = normalizeStoredPromotion(product.promotion, safePrice, nowMs);
+
+  const normalized = {
+    ...product,
+    productMode,
+    variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
+    extras: normalizeProductExtras(product.extras),
+    price: safePrice
+  };
+
+  if (normalizedPromotion) {
+    normalized.promotion = normalizedPromotion;
+  } else {
+    delete normalized.promotion;
   }
 
   return normalized;
@@ -530,28 +641,23 @@ async function seedUploadsFromLegacyIfNeeded() {
   }
 }
 
-function applyPromotionCleanup(store, nowMs = Date.now()) {
+function applyProductCleanup(store, nowMs = Date.now()) {
   if (!Array.isArray(store?.products)) return false;
 
   let didChange = false;
+  const normalizedProducts = [];
 
   for (const product of store.products) {
-    const normalizedPromotion = normalizeStoredPromotion(product?.promotion, Number(product?.price), nowMs);
+    const normalizedProduct = normalizeProductForStore(product, nowMs);
+    normalizedProducts.push(normalizedProduct);
 
-    if (normalizedPromotion) {
-      const currentSerialized = JSON.stringify(product.promotion || null);
-      const nextSerialized = JSON.stringify(normalizedPromotion);
-      if (currentSerialized !== nextSerialized) {
-        product.promotion = normalizedPromotion;
-        didChange = true;
-      }
-      continue;
-    }
-
-    if (product && Object.prototype.hasOwnProperty.call(product, 'promotion')) {
-      delete product.promotion;
+    if (JSON.stringify(product) !== JSON.stringify(normalizedProduct)) {
       didChange = true;
     }
+  }
+
+  if (didChange) {
+    store.products = normalizedProducts;
   }
 
   return didChange;
@@ -559,7 +665,7 @@ function applyPromotionCleanup(store, nowMs = Date.now()) {
 
 async function readStoreWithPromotionCleanup() {
   const store = await readStore();
-  const didChange = applyPromotionCleanup(store);
+  const didChange = applyProductCleanup(store);
   if (didChange) {
     await writeStore(store);
   }
@@ -598,7 +704,7 @@ async function atomicWriteFile(filePath, payload) {
 async function cleanupExpiredPromotionsInStoreFile() {
   try {
     const store = await readStore();
-    const didChange = applyPromotionCleanup(store);
+    const didChange = applyProductCleanup(store);
     if (!didChange) return;
 
     await writeStore(store);
@@ -862,10 +968,7 @@ app.get('/api/store', async (_, res) => {
     const store = await readStoreWithPromotionCleanup();
     store.settings = withSettingsDefaults(store.settings);
     store.products = Array.isArray(store.products)
-      ? store.products.map((product) => ({
-          ...product,
-          extras: normalizeProductExtras(product.extras)
-        }))
+      ? store.products.map((product) => normalizeProductForStore(product))
       : [];
     res.json(store);
   } catch {
@@ -1030,13 +1133,30 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
     const name = sanitizeText(req.body.name);
     const description = sanitizeText(req.body.description);
     const categoryId = sanitizeText(req.body.categoryId);
-    const price = sanitizePrice(req.body.price);
+    const parsedVariants = parseVariantsPayload(req.body.variants);
+    const requestedMode = sanitizeText(req.body.productMode, PRODUCT_MODE_SINGLE).toLowerCase();
+    const productMode = resolveProductMode(requestedMode, Array.isArray(parsedVariants) ? parsedVariants : []);
+    const variants = productMode === PRODUCT_MODE_VARIANTS ? parsedVariants : [];
+    const price =
+      productMode === PRODUCT_MODE_VARIANTS ? Number(variants?.[0]?.price) : sanitizePrice(req.body.price);
     const extras = parseExtrasPayload(req.body.extras);
     const promotionResult = parsePromotionPayload(req.body.promotion, Number(price));
 
-    if (!name || !categoryId || price === null) {
+    if (parsedVariants === null) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: 'Invalid variants payload.' });
+      return;
+    }
+
+    if (!name || !categoryId || price === null || !Number.isFinite(price)) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
       res.status(400).json({ error: 'Name, category and price are required.' });
+      return;
+    }
+
+    if (productMode === PRODUCT_MODE_VARIANTS && (!Array.isArray(variants) || !variants.length)) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: 'Variants are required for variant products.' });
       return;
     }
 
@@ -1064,6 +1184,8 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       name,
       description,
       price,
+      productMode,
+      variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
       categoryId,
       extras,
       image: req.file ? `/uploads/${req.file.filename}` : '',
@@ -1105,7 +1227,22 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
     const name = sanitizeText(req.body.name, product.name);
     const description = sanitizeText(req.body.description, product.description);
     const categoryId = sanitizeText(req.body.categoryId, product.categoryId);
-    const price = req.body.price !== undefined ? sanitizePrice(req.body.price) : product.price;
+    const existingVariants = normalizeProductVariants(product.variants);
+    const fallbackMode = resolveProductMode(product.productMode, existingVariants);
+    const requestedMode =
+      req.body.productMode !== undefined
+        ? sanitizeText(req.body.productMode, fallbackMode).toLowerCase()
+        : fallbackMode;
+    const parsedVariants =
+      req.body.variants !== undefined ? parseVariantsPayload(req.body.variants) : existingVariants;
+    const productMode = resolveProductMode(requestedMode, Array.isArray(parsedVariants) ? parsedVariants : []);
+    const variants = productMode === PRODUCT_MODE_VARIANTS ? parsedVariants : [];
+    const price =
+      productMode === PRODUCT_MODE_VARIANTS
+        ? Number(variants?.[0]?.price)
+        : req.body.price !== undefined
+          ? sanitizePrice(req.body.price)
+          : sanitizePrice(product.price);
     const extras =
       req.body.extras !== undefined
         ? parseExtrasPayload(req.body.extras)
@@ -1116,9 +1253,21 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
         : { ok: true, promotion: normalizeStoredPromotion(product.promotion, Number(price)) };
     const removeImage = String(req.body.removeImage || 'false') === 'true';
 
-    if (!name || price === null || !categoryId) {
+    if (parsedVariants === null) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: 'Invalid variants payload.' });
+      return;
+    }
+
+    if (!name || price === null || !Number.isFinite(price) || !categoryId) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
       res.status(400).json({ error: 'Name, category and price are required.' });
+      return;
+    }
+
+    if (productMode === PRODUCT_MODE_VARIANTS && (!Array.isArray(variants) || !variants.length)) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: 'Variants are required for variant products.' });
       return;
     }
 
@@ -1146,6 +1295,8 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
     product.name = name;
     product.description = description;
     product.price = price;
+    product.productMode = productMode;
+    product.variants = productMode === PRODUCT_MODE_VARIANTS ? variants : [];
     product.categoryId = categoryId;
     product.extras = extras;
     if (promotionResult.promotion) {

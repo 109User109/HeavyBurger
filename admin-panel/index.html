@@ -156,10 +156,30 @@
             Nombre
             <input type="text" name="name" required />
           </label>
-          <label>
-            Precio
+          <label id="product-price-label">
+            Precio base
             <input type="number" name="price" min="0" step="0.01" required />
+            <small id="product-price-hint" class="muted">
+              Para productos con variantes se usa automaticamente el precio de la primera opcion.
+            </small>
           </label>
+
+          <section class="full product-mode-editor">
+            <h3>Tipo de producto</h3>
+            <div class="product-mode-options">
+              <label class="checkbox-row">
+                <input type="radio" name="productMode" value="single" checked />
+                Producto unico
+              </label>
+              <label class="checkbox-row">
+                <input type="radio" name="productMode" value="variants" />
+                Producto con variantes obligatorias
+              </label>
+            </div>
+            <p class="muted">
+              Si eliges variantes, el cliente debera seleccionar una opcion al agregar al carrito.
+            </p>
+          </section>
 
           <section class="full promotion-editor">
             <label class="checkbox-row">
@@ -183,6 +203,17 @@
             Categoria
             <select name="categoryId" required></select>
           </label>
+
+          <div id="variants-editor" class="full variants-editor" hidden>
+            <div class="section-head">
+              <h3>Variantes obligatorias</h3>
+              <button id="add-variant-btn" type="button" class="outline-btn">Agregar variante</button>
+            </div>
+            <p class="muted">
+              La primera variante queda como predeterminada y define el precio base mostrado.
+            </p>
+            <div id="product-variants-list" class="extras-list"></div>
+          </div>
 
           <div class="full extras-editor">
             <div class="section-head">

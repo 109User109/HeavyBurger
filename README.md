@@ -19,6 +19,9 @@ Tienda virtual moderna en modo oscuro, hecha con HTML/CSS/JavaScript y backend e
 - Panel admin responsivo (optimizado para uso desde celular).
 - Panel admin organizado por secciones (General, Mensajes, Categorias, Productos).
 - CRUD completo de categorias y productos.
+- Productos con dos modos:
+  - unico (precio base fijo),
+  - con variantes obligatorias (la primera variante define el precio base).
 - Subida de imagenes real al servidor (`/uploads`).
 - Captura de foto desde movil directamente en el formulario de producto.
 - Listado de productos en admin con:

@@ -259,6 +259,30 @@ textarea {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.variants-editor {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.product-mode-editor {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.product-mode-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+}
+
 .promotion-editor {
   display: grid;
   gap: 0.65rem;
@@ -298,6 +322,21 @@ textarea {
 }
 
 .extra-row .danger-btn {
+  min-height: 44px;
+}
+
+.variant-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+  padding: 0.55rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.variant-row .danger-btn {
   min-height: 44px;
 }
 
@@ -808,6 +847,10 @@ input.invalid {
   }
 
   .extra-row {
+    grid-template-columns: 1fr;
+  }
+
+  .variant-row {
     grid-template-columns: 1fr;
   }
 

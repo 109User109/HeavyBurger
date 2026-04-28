@@ -486,18 +486,22 @@ p {
 
 .content h3 {
   font-size: 1.08rem;
+  overflow-wrap: anywhere;
 }
 
 .description {
   color: var(--muted);
   font-size: 0.92rem;
   min-height: 2.35rem;
+  overflow-wrap: anywhere;
 }
 
 .card-footer {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .price {
@@ -547,6 +551,7 @@ p {
   font-weight: 700;
   font-size: 0.8rem;
   white-space: nowrap;
+  margin-left: auto;
   transition: border-color 0.2s ease, background-color 0.2s ease, filter 0.2s ease;
 }
 
@@ -674,6 +679,12 @@ body.cart-open .cart-drawer {
 
 .cart-item-note {
   margin-top: 0.38rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.cart-item-variant {
+  margin-top: 0.3rem;
   color: var(--muted);
   font-size: 0.78rem;
 }
@@ -921,7 +932,8 @@ body.cart-open .cart-drawer {
   gap: 0.4rem;
 }
 
-.config-extra-option {
+.config-extra-option,
+.config-variant-option {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
@@ -931,18 +943,29 @@ body.cart-open .cart-drawer {
   background: rgba(255, 255, 255, 0.03);
 }
 
-.config-extra-option input {
+.config-extra-option input,
+.config-variant-option input {
   margin-top: 0.15rem;
 }
 
-.config-extra-option span {
+.config-extra-option span,
+.config-variant-option span {
   color: var(--text);
   font-size: 0.9rem;
 }
 
-.config-extra-option small {
+.config-extra-option > div,
+.config-variant-option > div {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.config-extra-option small,
+.config-variant-option small {
   color: var(--muted);
   font-size: 0.79rem;
+  display: block;
 }
 
 .config-note-field,
@@ -1197,6 +1220,30 @@ body.cart-open .cart-drawer {
 
   .config-qty-controls {
     grid-template-columns: auto 1fr auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .product-card {
+    grid-template-columns: 1fr;
+    row-gap: 0.72rem;
+    padding: 0.9rem;
+  }
+
+  .thumb {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
+
+  .content {
+    grid-column: 1;
+  }
+
+  .price {
+    justify-items: start;
+    text-align: left;
+    white-space: normal;
   }
 }
 

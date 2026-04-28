@@ -8,12 +8,16 @@
   configurator: {
     open: false,
     productId: '',
+    productMode: 'single',
+    variants: [],
     extras: []
   }
 };
 
 const DEFAULT_PRIMARY_COLOR = '#15314B';
 const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
+const PRODUCT_MODE_SINGLE = 'single';
+const PRODUCT_MODE_VARIANTS = 'variants';
 
 const dom = {
   storeName: document.getElementById('store-name'),
@@ -42,6 +46,8 @@ const dom = {
   closeProductConfigBtn: document.getElementById('close-product-config-btn'),
   configProductName: document.getElementById('config-product-name'),
   configBasePrice: document.getElementById('config-base-price'),
+  configVariantsSection: document.getElementById('config-variants-section'),
+  configVariantsList: document.getElementById('config-variants-list'),
   configExtrasList: document.getElementById('config-extras-list'),
   configNote: document.getElementById('config-note'),
   configQuantity: document.getElementById('config-quantity'),
@@ -104,6 +110,7 @@ function bindEvents() {
   dom.productConfigBackdrop.addEventListener('click', closeProductConfigurator);
   dom.closeProductConfigBtn.addEventListener('click', closeProductConfigurator);
   dom.productConfigForm.addEventListener('submit', onSubmitProductConfigurator);
+  dom.configVariantsList.addEventListener('change', updateProductConfiguratorTotal);
   dom.configExtrasList.addEventListener('change', updateProductConfiguratorTotal);
   dom.configQuantity.addEventListener('input', () => {
     readConfiguratorQuantity();
@@ -197,11 +204,7 @@ async function loadStore() {
   if (!Array.isArray(state.store.categories)) state.store.categories = [];
   if (!Array.isArray(state.store.products)) state.store.products = [];
 
-  state.store.products = state.store.products.map((product) => ({
-    ...product,
-    extras: normalizeProductExtras(product.extras),
-    promotion: normalizePromotion(product.promotion, Number(product.price))
-  }));
+  state.store.products = state.store.products.map((product) => normalizeProductForCatalog(product));
 
   applyThemeFromSettings(state.store.settings || {});
 
@@ -301,6 +304,12 @@ function formatMoney(value) {
   }
 }
 
+function normalizeMoney(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return Number(fallback.toFixed(2));
+  return Number(parsed.toFixed(2));
+}
+
 function normalizeProductExtras(rawExtras) {
   if (!Array.isArray(rawExtras)) return [];
 
@@ -321,6 +330,56 @@ function normalizeProductExtras(rawExtras) {
   }
 
   return normalized;
+}
+
+function normalizeProductVariants(rawVariants) {
+  if (!Array.isArray(rawVariants)) return [];
+
+  const normalized = [];
+
+  for (const variant of rawVariants) {
+    const name = String(variant?.name || '').trim();
+    const parsedPrice = Number(variant?.price);
+
+    if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      continue;
+    }
+
+    normalized.push({
+      id: String(variant?.id || ''),
+      name,
+      price: Number(parsedPrice.toFixed(2))
+    });
+  }
+
+  return normalized;
+}
+
+function getProductMode(product, variants = normalizeProductVariants(product?.variants)) {
+  const rawMode = String(product?.productMode || '').trim().toLowerCase();
+
+  if (rawMode === PRODUCT_MODE_SINGLE) return PRODUCT_MODE_SINGLE;
+  if (variants.length) return PRODUCT_MODE_VARIANTS;
+
+  return PRODUCT_MODE_SINGLE;
+}
+
+function normalizeProductForCatalog(product = {}) {
+  const variants = normalizeProductVariants(product.variants);
+  const productMode = getProductMode(product, variants);
+  const basePrice =
+    productMode === PRODUCT_MODE_VARIANTS && variants.length
+      ? variants[0].price
+      : normalizeMoney(product.price, 0);
+
+  return {
+    ...product,
+    productMode,
+    variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
+    price: basePrice,
+    extras: normalizeProductExtras(product.extras),
+    promotion: normalizePromotion(product.promotion, basePrice)
+  };
 }
 
 function normalizePromotion(rawPromotion, basePrice) {
@@ -368,9 +427,7 @@ function formatPromotionBadge(discountPercentage) {
   return `${display}% OFF`;
 }
 
-function getEffectiveProductPricing(product, nowMs = Date.now()) {
-  const basePrice = Number(product?.price);
-
+function getEffectivePricing(basePrice, promotion, nowMs = Date.now()) {
   if (!Number.isFinite(basePrice) || basePrice < 0) {
     return {
       hasPromotion: false,
@@ -380,8 +437,8 @@ function getEffectiveProductPricing(product, nowMs = Date.now()) {
     };
   }
 
-  const promotion = normalizePromotion(product?.promotion, basePrice);
-  if (!promotion) {
+  const normalizedPromotion = normalizePromotion(promotion, basePrice);
+  if (!normalizedPromotion) {
     return {
       hasPromotion: false,
       originalPrice: Number(basePrice.toFixed(2)),
@@ -390,8 +447,8 @@ function getEffectiveProductPricing(product, nowMs = Date.now()) {
     };
   }
 
-  const startTs = Date.parse(promotion.startAt);
-  const endTs = Date.parse(promotion.endAt);
+  const startTs = Date.parse(normalizedPromotion.startAt);
+  const endTs = Date.parse(normalizedPromotion.endAt);
   const isActive = nowMs >= startTs && nowMs <= endTs;
 
   if (!isActive) {
@@ -403,23 +460,28 @@ function getEffectiveProductPricing(product, nowMs = Date.now()) {
     };
   }
 
-  if (promotion.type === 'percentage') {
-    const finalPrice = Number((basePrice * (1 - promotion.discountPercentage / 100)).toFixed(2));
+  if (normalizedPromotion.type === 'percentage') {
+    const finalPrice = Number((basePrice * (1 - normalizedPromotion.discountPercentage / 100)).toFixed(2));
 
     return {
       hasPromotion: true,
       originalPrice: Number(basePrice.toFixed(2)),
       finalPrice: Math.max(0, finalPrice),
-      badgeText: formatPromotionBadge(promotion.discountPercentage)
+      badgeText: formatPromotionBadge(normalizedPromotion.discountPercentage)
     };
   }
 
   return {
     hasPromotion: true,
     originalPrice: Number(basePrice.toFixed(2)),
-    finalPrice: Number(promotion.promotionalPrice.toFixed(2)),
+    finalPrice: Number(normalizedPromotion.promotionalPrice.toFixed(2)),
     badgeText: 'Oferta'
   };
+}
+
+function getEffectiveProductPricing(product, nowMs = Date.now()) {
+  const basePrice = Number(product?.price);
+  return getEffectivePricing(basePrice, product?.promotion, nowMs);
 }
 
 function getCategoryName(categoryId) {
@@ -436,7 +498,10 @@ function filteredProducts() {
 
     if (!state.searchTerm) return true;
 
-    const searchable = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+    const variantNames = normalizeProductVariants(product.variants)
+      .map((variant) => variant.name)
+      .join(' ');
+    const searchable = `${product.name || ''} ${product.description || ''} ${variantNames}`.toLowerCase();
     return searchable.includes(state.searchTerm);
   });
 }
@@ -526,15 +591,19 @@ function openProductConfigurator(productId) {
   const product = getProductById(productId);
   if (!product) return;
 
+  const variants = normalizeProductVariants(product.variants);
+  const productMode = getProductMode(product, variants);
+
   state.configurator.productId = product.id;
+  state.configurator.productMode = productMode;
+  state.configurator.variants = productMode === PRODUCT_MODE_VARIANTS ? variants : [];
   state.configurator.extras = normalizeProductExtras(product.extras);
-  const pricing = getEffectiveProductPricing(product);
 
   dom.configProductName.textContent = product.name;
-  dom.configBasePrice.textContent = `Precio base: ${formatMoney(pricing.finalPrice)}`;
   dom.configNote.value = '';
   dom.configQuantity.value = '1';
 
+  renderConfiguratorVariants();
   renderConfiguratorExtras();
   updateProductConfiguratorTotal();
   setProductConfiguratorOpen(true);
@@ -542,8 +611,57 @@ function openProductConfigurator(productId) {
 
 function closeProductConfigurator() {
   state.configurator.productId = '';
+  state.configurator.productMode = PRODUCT_MODE_SINGLE;
+  state.configurator.variants = [];
   state.configurator.extras = [];
   setProductConfiguratorOpen(false);
+}
+
+function renderConfiguratorVariants() {
+  dom.configVariantsList.innerHTML = '';
+
+  if (state.configurator.productMode !== PRODUCT_MODE_VARIANTS || !state.configurator.variants.length) {
+    dom.configVariantsSection.hidden = true;
+    return;
+  }
+
+  dom.configVariantsSection.hidden = false;
+  const product = getProductById(state.configurator.productId);
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < state.configurator.variants.length; index += 1) {
+    const variant = state.configurator.variants[index];
+    const variantPricing = getEffectivePricing(Number(variant.price), product?.promotion);
+
+    const label = document.createElement('label');
+    label.className = 'config-variant-option';
+
+    const radio = document.createElement('input');
+    radio.type = 'radio';
+    radio.name = 'config-variant-choice';
+    radio.value = String(index);
+    radio.required = true;
+    radio.checked = index === 0;
+
+    const textWrap = document.createElement('div');
+
+    const nameLine = document.createElement('span');
+    nameLine.textContent = variant.name;
+
+    const priceLine = document.createElement('small');
+    priceLine.textContent = variantPricing.hasPromotion
+      ? `${formatMoney(variantPricing.finalPrice)} (antes ${formatMoney(variantPricing.originalPrice)})`
+      : `${formatMoney(variantPricing.finalPrice)}`;
+
+    textWrap.appendChild(nameLine);
+    textWrap.appendChild(priceLine);
+
+    label.appendChild(radio);
+    label.appendChild(textWrap);
+    fragment.appendChild(label);
+  }
+
+  dom.configVariantsList.appendChild(fragment);
 }
 
 function renderConfiguratorExtras() {
@@ -619,17 +737,42 @@ function getSelectedConfiguratorExtras() {
   return selected;
 }
 
+function getSelectedConfiguratorVariant() {
+  if (state.configurator.productMode !== PRODUCT_MODE_VARIANTS) return null;
+
+  const checkedInput = dom.configVariantsList.querySelector('input[type="radio"]:checked');
+  const selectedIndex = Number.parseInt(checkedInput?.value || '0', 10);
+  const fallbackVariant = state.configurator.variants[0];
+  const selectedVariant = state.configurator.variants[selectedIndex];
+
+  return selectedVariant || fallbackVariant || null;
+}
+
 function updateProductConfiguratorTotal() {
   const product = getProductById(state.configurator.productId);
   if (!product) {
+    dom.configBasePrice.textContent = 'Precio base: $0';
     dom.configTotalPrice.textContent = formatMoney(0);
     return;
+  }
+
+  const selectedVariant = getSelectedConfiguratorVariant();
+  const basePriceInput =
+    selectedVariant && state.configurator.productMode === PRODUCT_MODE_VARIANTS
+      ? Number(selectedVariant.price)
+      : Number(product.price);
+  const basePriceDetails = getEffectivePricing(basePriceInput, product.promotion);
+  const basePrice = basePriceDetails.finalPrice;
+
+  if (selectedVariant && state.configurator.productMode === PRODUCT_MODE_VARIANTS) {
+    dom.configBasePrice.textContent = `Precio base (${selectedVariant.name}): ${formatMoney(basePrice)}`;
+  } else {
+    dom.configBasePrice.textContent = `Precio base: ${formatMoney(basePrice)}`;
   }
 
   const quantity = readConfiguratorQuantity();
   const selectedExtras = getSelectedConfiguratorExtras();
   const extrasTotal = selectedExtras.reduce((sum, extra) => sum + extra.price, 0);
-  const basePrice = getEffectiveProductPricing(product).finalPrice;
   const unitPrice = basePrice + extrasTotal;
   const itemTotal = unitPrice * quantity;
 
@@ -642,12 +785,19 @@ function onSubmitProductConfigurator(event) {
   const product = getProductById(state.configurator.productId);
   if (!product) return;
 
+  const selectedVariant = getSelectedConfiguratorVariant();
+  if (state.configurator.productMode === PRODUCT_MODE_VARIANTS && !selectedVariant) {
+    alert('Debes elegir una variante para continuar.');
+    return;
+  }
+
   const quantity = readConfiguratorQuantity();
   const selectedExtras = getSelectedConfiguratorExtras();
   const note = String(dom.configNote.value || '').trim();
 
   addConfiguredProductToCart({
     product,
+    selectedVariant,
     quantity,
     selectedExtras,
     note
@@ -657,8 +807,8 @@ function onSubmitProductConfigurator(event) {
   showCartToast(`${product.name} agregado al carrito`);
 }
 
-function addConfiguredProductToCart({ product, quantity, selectedExtras, note }) {
-  const signature = buildCartSignature(product.id, selectedExtras, note);
+function addConfiguredProductToCart({ product, selectedVariant, quantity, selectedExtras, note }) {
+  const signature = buildCartSignature(product.id, selectedVariant, selectedExtras, note);
   const existingItem = state.cart.find((item) => item.signature === signature);
 
   if (existingItem) {
@@ -669,6 +819,14 @@ function addConfiguredProductToCart({ product, quantity, selectedExtras, note })
       signature,
       productId: product.id,
       quantity,
+      variant:
+        selectedVariant && state.configurator.productMode === PRODUCT_MODE_VARIANTS
+          ? {
+              id: selectedVariant.id,
+              name: selectedVariant.name,
+              price: selectedVariant.price
+            }
+          : null,
       extras: selectedExtras.map((extra) => ({
         name: extra.name,
         price: extra.price
@@ -680,18 +838,24 @@ function addConfiguredProductToCart({ product, quantity, selectedExtras, note })
   renderCart();
 }
 
-function buildCartSignature(productId, extras, note) {
+function buildCartSignature(productId, selectedVariant, extras, note) {
   const normalizedNote = String(note || '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+
+  const variantSignature = selectedVariant
+    ? `${String(selectedVariant.id || selectedVariant.name || '')
+        .trim()
+        .toLowerCase()}::${Number(selectedVariant.price || 0).toFixed(2)}`
+    : 'single';
 
   const extrasSignature = [...extras]
     .map((extra) => `${String(extra.name || '').trim().toLowerCase()}::${Number(extra.price || 0).toFixed(2)}`)
     .sort()
     .join('|');
 
-  return `${productId}::${extrasSignature}::${normalizedNote}`;
+  return `${productId}::${variantSignature}::${extrasSignature}::${normalizedNote}`;
 }
 
 function createClientId(prefix) {
@@ -700,6 +864,27 @@ function createClientId(prefix) {
 
 function normalizeCartExtras(rawExtras) {
   return normalizeProductExtras(rawExtras);
+}
+
+function normalizeCartVariant(rawVariant, product) {
+  const variants = normalizeProductVariants(product?.variants);
+  const productMode = getProductMode(product, variants);
+
+  if (productMode !== PRODUCT_MODE_VARIANTS || !variants.length) return null;
+
+  const requestedId = String(rawVariant?.id || '').trim();
+  if (requestedId) {
+    const matchedById = variants.find((variant) => variant.id && variant.id === requestedId);
+    if (matchedById) return { ...matchedById };
+  }
+
+  const requestedName = String(rawVariant?.name || '').trim().toLowerCase();
+  if (requestedName) {
+    const matchedByName = variants.find((variant) => variant.name.toLowerCase() === requestedName);
+    if (matchedByName) return { ...matchedByName };
+  }
+
+  return { ...variants[0] };
 }
 
 function showCartToast(message) {
@@ -747,9 +932,11 @@ function renderCart() {
       continue;
     }
 
+    const variant = normalizeCartVariant(cartItem.variant, product);
     const extras = normalizeCartExtras(cartItem.extras);
     const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
-    const basePrice = getEffectiveProductPricing(product).finalPrice;
+    const basePriceSource = variant ? Number(variant.price) : Number(product.price);
+    const basePrice = getEffectivePricing(basePriceSource, product.promotion).finalPrice;
     const unitPrice = basePrice + extrasTotal;
     const subtotal = unitPrice * cartItem.quantity;
 
@@ -758,6 +945,7 @@ function renderCart() {
 
     const normalizedItem = {
       ...cartItem,
+      variant,
       extras,
       quantity: cartItem.quantity
     };
@@ -769,6 +957,7 @@ function renderCart() {
           .map((extra) => `<li>${escapeHtml(extra.name)} (+${escapeHtml(formatMoney(extra.price))})</li>`)
           .join('')}</ul>`
       : '';
+    const variantHtml = variant ? `<p class="cart-item-variant">Variante: ${escapeHtml(variant.name)}</p>` : '';
 
     const noteHtml = cartItem.note
       ? `<p class="cart-item-note">Nota: ${escapeHtml(cartItem.note)}</p>`
@@ -780,6 +969,7 @@ function renderCart() {
       <div>
         <h4>${escapeHtml(product.name)}</h4>
         <p class="unit">${formatMoney(unitPrice)} c/u</p>
+        ${variantHtml}
         ${extrasHtml}
         ${noteHtml}
       </div>
@@ -836,15 +1026,18 @@ function checkoutByWhatsapp() {
     const product = getProductById(cartItem.productId);
     if (!product) continue;
 
+    const variant = normalizeCartVariant(cartItem.variant, product);
     const extras = normalizeCartExtras(cartItem.extras);
     const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
-    const basePrice = getEffectiveProductPricing(product).finalPrice;
+    const basePriceSource = variant ? Number(variant.price) : Number(product.price);
+    const basePrice = getEffectivePricing(basePriceSource, product.promotion).finalPrice;
     const unitPrice = basePrice + extrasTotal;
     const subtotal = unitPrice * cartItem.quantity;
 
     totalAmount += subtotal;
 
-    productLines.push(`- ${product.name} x${cartItem.quantity} (${formatMoney(subtotal)})`);
+    const variantSuffix = variant ? ` (${variant.name})` : '';
+    productLines.push(`- ${product.name}${variantSuffix} x${cartItem.quantity} (${formatMoney(subtotal)})`);
 
     if (extras.length) {
       const extrasText = extras

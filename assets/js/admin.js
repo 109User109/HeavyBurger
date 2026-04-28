@@ -40,6 +40,8 @@ const state = {
 const DEFAULT_PRIMARY_COLOR = '#15314B';
 const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
 const HEARTBEAT_INTERVAL_MS = 60000;
+const PRODUCT_MODE_SINGLE = 'single';
+const PRODUCT_MODE_VARIANTS = 'variants';
 
 const dom = {
   status: document.getElementById('status'),
@@ -56,6 +58,12 @@ const dom = {
   productSearch: document.getElementById('admin-product-search'),
   productCategoryFilter: document.getElementById('admin-product-category-filter'),
   productSort: document.getElementById('admin-product-sort'),
+  productModeInputs: Array.from(document.querySelectorAll('input[name="productMode"]')),
+  productPriceLabel: document.getElementById('product-price-label'),
+  productPriceHint: document.getElementById('product-price-hint'),
+  variantsEditor: document.getElementById('variants-editor'),
+  addVariantBtn: document.getElementById('add-variant-btn'),
+  productVariantsList: document.getElementById('product-variants-list'),
   addExtraBtn: document.getElementById('add-extra-btn'),
   productExtrasList: document.getElementById('product-extras-list'),
   primaryColorPicker: document.getElementById('primary-color-picker'),
@@ -144,6 +152,9 @@ function bindEvents() {
   dom.productForm.addEventListener('submit', onSaveProduct);
   dom.productsList.addEventListener('click', onProductAction);
   dom.cancelEdit.addEventListener('click', resetProductForm);
+  dom.addVariantBtn.addEventListener('click', () => appendVariantEditorRow());
+  dom.productVariantsList.addEventListener('click', onProductVariantsAction);
+  dom.productVariantsList.addEventListener('input', onProductVariantsInput);
   dom.addExtraBtn.addEventListener('click', () => appendExtraEditorRow());
   dom.productExtrasList.addEventListener('click', onProductExtrasAction);
 
@@ -161,6 +172,9 @@ function bindEvents() {
     state.productView.sort = event.target.value;
     renderProducts();
   });
+  for (const input of dom.productModeInputs) {
+    input.addEventListener('change', onProductModeChange);
+  }
 
   dom.productForm.elements.name.addEventListener('input', renderPreviewCard);
   dom.productForm.elements.description.addEventListener('input', renderPreviewCard);
@@ -407,6 +421,9 @@ async function refreshStore() {
   }
 
   state.store = await response.json();
+  state.store.products = Array.isArray(state.store.products)
+    ? state.store.products.map((product) => normalizeProductForAdmin(product))
+    : [];
   renderAll();
 }
 
@@ -521,7 +538,10 @@ function getVisibleProducts() {
 
   if (query) {
     items = items.filter((product) => {
-      const searchable = `${product.name || ''} ${product.description || ''}`.toLowerCase();
+      const variantNames = normalizeProductVariants(product.variants)
+        .map((variant) => variant.name)
+        .join(' ');
+      const searchable = `${product.name || ''} ${product.description || ''} ${variantNames}`.toLowerCase();
       return searchable.includes(query);
     });
   }
@@ -575,6 +595,12 @@ function renderProducts() {
       const promotionLabel = promotionView.isActive
         ? `<span>Promo activa: ${escapeHtml(promotionView.badgeText)}</span>`
         : '';
+      const productMode = getProductMode(product);
+      const variants = normalizeProductVariants(product.variants);
+      const productModeLabel =
+        productMode === PRODUCT_MODE_VARIANTS
+          ? `Con variantes: ${variants.length}`
+          : 'Producto unico';
 
       return `
       <article class="product-item" data-product-id="${product.id}">
@@ -590,6 +616,7 @@ function renderProducts() {
             ${promotionLabel}
             <span>Categoria: ${escapeHtml(getCategoryName(product.categoryId))}</span>
             <span>Publicado: ${escapeHtml(formatDate(product.createdAt))}</span>
+            <span>Tipo: ${escapeHtml(productModeLabel)}</span>
             <span>Extras configurados: ${normalizeProductExtras(product.extras).length}</span>
             <span>${escapeHtml(product.description || 'Sin descripcion')}</span>
           </div>
@@ -602,6 +629,15 @@ function renderProducts() {
     `;
     })
     .join('');
+}
+
+function normalizeMoney(value, fallback = 0) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return Number(fallback.toFixed(2));
+  }
+
+  return Number(parsed.toFixed(2));
 }
 
 function normalizeProductExtras(rawExtras) {
@@ -624,6 +660,226 @@ function normalizeProductExtras(rawExtras) {
   }
 
   return normalized;
+}
+
+function normalizeProductVariants(rawVariants) {
+  if (!Array.isArray(rawVariants)) return [];
+
+  const normalized = [];
+
+  for (const variant of rawVariants) {
+    const name = String(variant?.name || '').trim();
+    const parsedPrice = Number(variant?.price);
+
+    if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      continue;
+    }
+
+    normalized.push({
+      id: String(variant?.id || ''),
+      name,
+      price: Number(parsedPrice.toFixed(2))
+    });
+  }
+
+  return normalized;
+}
+
+function getProductMode(product) {
+  const variants = normalizeProductVariants(product?.variants);
+  const rawMode = String(product?.productMode || '').trim().toLowerCase();
+
+  if (rawMode === PRODUCT_MODE_SINGLE) return PRODUCT_MODE_SINGLE;
+  if (variants.length) return PRODUCT_MODE_VARIANTS;
+
+  return PRODUCT_MODE_SINGLE;
+}
+
+function normalizeProductForAdmin(product = {}) {
+  const variants = normalizeProductVariants(product.variants);
+  const productMode = getProductMode({ ...product, variants });
+  const basePrice =
+    productMode === PRODUCT_MODE_VARIANTS && variants.length
+      ? variants[0].price
+      : normalizeMoney(product.price, 0);
+
+  return {
+    ...product,
+    productMode,
+    variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
+    price: basePrice,
+    extras: normalizeProductExtras(product.extras)
+  };
+}
+
+function getSelectedProductMode() {
+  const selected = dom.productModeInputs.find((input) => input.checked);
+  return selected?.value === PRODUCT_MODE_VARIANTS ? PRODUCT_MODE_VARIANTS : PRODUCT_MODE_SINGLE;
+}
+
+function setSelectedProductMode(mode) {
+  for (const input of dom.productModeInputs) {
+    input.checked = input.value === mode;
+  }
+}
+
+function setProductModeUI(mode) {
+  const isVariantsMode = mode === PRODUCT_MODE_VARIANTS;
+
+  dom.variantsEditor.hidden = !isVariantsMode;
+  dom.productForm.elements.price.required = !isVariantsMode;
+  dom.productForm.elements.price.readOnly = isVariantsMode;
+  dom.productForm.elements.price.setAttribute('aria-readonly', isVariantsMode ? 'true' : 'false');
+
+  if (dom.productPriceLabel?.firstChild) {
+    dom.productPriceLabel.firstChild.textContent = isVariantsMode ? 'Precio base (primera variante)' : 'Precio base';
+  }
+
+  if (dom.productPriceHint) {
+    dom.productPriceHint.textContent = isVariantsMode
+      ? 'Se calcula automaticamente con la primera variante.'
+      : 'Precio principal del producto sin extras.';
+  }
+
+  if (isVariantsMode && !dom.productVariantsList.querySelector('.variant-row')) {
+    appendVariantEditorRow();
+  }
+
+  if (isVariantsMode) {
+    syncPriceFromFirstVariant();
+  }
+
+  renderPromotionSummary();
+  renderPreviewCard();
+}
+
+function onProductModeChange() {
+  setProductModeUI(getSelectedProductMode());
+}
+
+function renderProductVariantsEditor(variants = []) {
+  dom.productVariantsList.innerHTML = '';
+
+  if (!Array.isArray(variants) || !variants.length) {
+    dom.productVariantsList.innerHTML =
+      '<p class="empty-list" data-empty-variants>Sin variantes por ahora. Agrega al menos una.</p>';
+    return;
+  }
+
+  for (const variant of variants) {
+    appendVariantEditorRow(variant);
+  }
+}
+
+function appendVariantEditorRow(variant = {}) {
+  const emptyState = dom.productVariantsList.querySelector('[data-empty-variants]');
+  if (emptyState) {
+    emptyState.remove();
+  }
+
+  const row = document.createElement('article');
+  row.className = 'variant-row';
+  row.innerHTML = `
+    <label>
+      Nombre de variante
+      <input type="text" data-variant-field="name" value="${escapeAttribute(
+        variant.name || ''
+      )}" placeholder="Ej: Simple, Doble, Triple" />
+    </label>
+    <label>
+      Precio de variante
+      <input type="number" data-variant-field="price" min="0" step="0.01" value="${escapeAttribute(
+        variant.price ?? ''
+      )}" placeholder="0" />
+    </label>
+    <button type="button" class="danger-btn" data-action="remove-variant">Quitar</button>
+  `;
+
+  dom.productVariantsList.appendChild(row);
+}
+
+function onProductVariantsAction(event) {
+  const button = event.target.closest('button[data-action="remove-variant"]');
+  if (!button) return;
+
+  const row = button.closest('.variant-row');
+  if (!row) return;
+
+  row.remove();
+
+  if (!dom.productVariantsList.querySelector('.variant-row')) {
+    renderProductVariantsEditor([]);
+  }
+
+  if (getSelectedProductMode() === PRODUCT_MODE_VARIANTS) {
+    syncPriceFromFirstVariant();
+    renderPromotionSummary();
+    renderPreviewCard();
+  }
+}
+
+function onProductVariantsInput() {
+  if (getSelectedProductMode() !== PRODUCT_MODE_VARIANTS) return;
+
+  syncPriceFromFirstVariant();
+  renderPromotionSummary();
+  renderPreviewCard();
+}
+
+function collectProductVariantsFromEditor({ requireAtLeastOne = false } = {}) {
+  const rows = Array.from(dom.productVariantsList.querySelectorAll('.variant-row'));
+  const variants = [];
+
+  for (const row of rows) {
+    const name = row.querySelector('[data-variant-field="name"]')?.value.trim() || '';
+    const priceRaw = row.querySelector('[data-variant-field="price"]')?.value.trim() || '';
+    const hasAnyValue = Boolean(name || priceRaw);
+
+    if (!hasAnyValue) {
+      continue;
+    }
+
+    const parsedPrice = Number(priceRaw);
+    if (!name || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      return {
+        ok: false,
+        error: 'Revisa variantes: cada una debe tener nombre y precio valido.'
+      };
+    }
+
+    variants.push({
+      name,
+      price: Number(parsedPrice.toFixed(2))
+    });
+  }
+
+  if (requireAtLeastOne && !variants.length) {
+    return {
+      ok: false,
+      error: 'Debes cargar al menos una variante para este producto.'
+    };
+  }
+
+  return { ok: true, variants };
+}
+
+function syncPriceFromFirstVariant() {
+  const firstRow = dom.productVariantsList.querySelector('.variant-row');
+
+  if (!firstRow) {
+    dom.productForm.elements.price.value = '';
+    return;
+  }
+
+  const rawPrice = firstRow.querySelector('[data-variant-field="price"]')?.value.trim() || '';
+  const parsedPrice = Number(rawPrice);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+    dom.productForm.elements.price.value = '';
+    return;
+  }
+
+  dom.productForm.elements.price.value = String(Number(parsedPrice.toFixed(2)));
 }
 
 function renderProductExtrasEditor(extras = []) {
@@ -1242,9 +1498,27 @@ async function onSaveProduct(event) {
 
   const name = form.elements.name.value.trim();
   const description = form.elements.description.value.trim();
-  const price = Number(form.elements.price.value);
   const categoryId = form.elements.categoryId.value;
   const removeImage = form.elements.removeImage.checked;
+  const productMode = getSelectedProductMode();
+
+  const variantsResult = collectProductVariantsFromEditor({
+    requireAtLeastOne: productMode === PRODUCT_MODE_VARIANTS
+  });
+  if (!variantsResult.ok) {
+    showStatus(variantsResult.error, 'error');
+    return;
+  }
+
+  const variants = productMode === PRODUCT_MODE_VARIANTS ? variantsResult.variants : [];
+  const price =
+    productMode === PRODUCT_MODE_VARIANTS
+      ? Number(variants[0]?.price)
+      : Number(form.elements.price.value);
+
+  if (productMode === PRODUCT_MODE_VARIANTS) {
+    form.elements.price.value = Number.isFinite(price) ? String(price) : '';
+  }
 
   if (!name || !Number.isFinite(price) || price < 0 || !categoryId) {
     showStatus('Nombre, precio y categoria son obligatorios.', 'error');
@@ -1267,6 +1541,8 @@ async function onSaveProduct(event) {
   formData.append('name', name);
   formData.append('description', description);
   formData.append('price', String(price));
+  formData.append('productMode', productMode);
+  formData.append('variants', JSON.stringify(variants));
   formData.append('categoryId', categoryId);
   formData.append('extras', JSON.stringify(extrasResult.extras));
   formData.append('promotion', promotionResult.promotion ? JSON.stringify(promotionResult.promotion) : '');
@@ -1347,8 +1623,9 @@ async function deleteProduct(productId) {
 }
 
 async function loadProductIntoForm(productId) {
-  const product = state.store.products.find((item) => item.id === productId);
-  if (!product) return;
+  const sourceProduct = state.store.products.find((item) => item.id === productId);
+  if (!sourceProduct) return;
+  const product = normalizeProductForAdmin(sourceProduct);
 
   state.editingProductId = productId;
 
@@ -1358,6 +1635,9 @@ async function loadProductIntoForm(productId) {
   form.elements.description.value = product.description || '';
   form.elements.price.value = product.price;
   form.elements.categoryId.value = product.categoryId;
+  renderProductVariantsEditor(normalizeProductVariants(product.variants));
+  setSelectedProductMode(product.productMode);
+  setProductModeUI(product.productMode);
   renderProductExtrasEditor(normalizeProductExtras(product.extras));
   fillPromotionEditorFromProduct(product);
   dom.imageFileInput.value = '';
@@ -1390,6 +1670,9 @@ function resetProductForm() {
   state.promotion.enabled = false;
   state.promotion.draft = null;
   closePromotionModal();
+  renderProductVariantsEditor([]);
+  setSelectedProductMode(PRODUCT_MODE_SINGLE);
+  setProductModeUI(PRODUCT_MODE_SINGLE);
   renderProductExtrasEditor([]);
 
   if (state.store?.categories?.[0]) {
@@ -1734,7 +2017,16 @@ function renderPreviewCard() {
 
   const name = form.elements.name.value.trim() || 'Nombre del producto';
   const description = form.elements.description.value.trim() || 'Descripcion del producto';
-  const rawPrice = Number(form.elements.price.value);
+  const isVariantsMode = getSelectedProductMode() === PRODUCT_MODE_VARIANTS;
+  let rawPrice = Number(form.elements.price.value);
+
+  if (isVariantsMode) {
+    const firstVariantPriceRaw =
+      dom.productVariantsList.querySelector('.variant-row [data-variant-field="price"]')?.value.trim() || '';
+    const firstVariantPrice = Number(firstVariantPriceRaw);
+    rawPrice = Number.isFinite(firstVariantPrice) && firstVariantPrice >= 0 ? firstVariantPrice : Number.NaN;
+  }
+
   const category = state.store.categories.find((item) => item.id === form.elements.categoryId.value);
   const basePrice = Number.isFinite(rawPrice) && rawPrice >= 0 ? Number(rawPrice.toFixed(2)) : 0;
   const promotionData = dom.promotionEnabled.checked ? state.promotion.draft : null;
