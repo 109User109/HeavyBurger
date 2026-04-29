@@ -207,6 +207,7 @@ async function loadStore() {
   state.store.products = state.store.products.map((product) => normalizeProductForCatalog(product));
 
   applyThemeFromSettings(state.store.settings || {});
+  state.selectedCategoryId = resolveDefaultCategoryId(state.store.settings?.defaultCategoryId);
 
   const title = state.store.settings?.storeName || 'Tienda';
   dom.storeName.textContent = title;
@@ -487,6 +488,14 @@ function getEffectiveProductPricing(product, nowMs = Date.now()) {
 function getCategoryName(categoryId) {
   const category = state.store.categories.find((item) => item.id === categoryId);
   return category ? category.name : 'Sin categoria';
+}
+
+function resolveDefaultCategoryId(rawCategoryId) {
+  const candidate = String(rawCategoryId || 'all').trim();
+  if (candidate === 'all') return 'all';
+
+  const exists = state.store?.categories?.some((category) => category.id === candidate);
+  return exists ? candidate : 'all';
 }
 
 function filteredProducts() {

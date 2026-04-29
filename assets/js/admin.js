@@ -442,12 +442,35 @@ function renderSettings() {
   const settings = state.store.settings || {};
   const primaryColor = normalizeHexColor(settings.primaryColor) || DEFAULT_PRIMARY_COLOR;
   const secondaryColor = normalizeHexColor(settings.secondaryColor) || DEFAULT_SECONDARY_COLOR;
+  const defaultCategorySelect = dom.generalForm.elements.defaultCategoryId;
+  const desiredDefaultCategoryId = String(settings.defaultCategoryId || 'all');
 
   dom.generalForm.elements.storeName.value = settings.storeName || '';
   dom.generalForm.elements.currency.value = settings.currency || 'ARS';
   dom.generalForm.elements.currencySymbol.value = settings.currencySymbol || '$';
   dom.generalForm.elements.primaryColor.value = primaryColor;
   dom.generalForm.elements.secondaryColor.value = secondaryColor;
+
+  if (defaultCategorySelect) {
+    defaultCategorySelect.innerHTML = '';
+
+    const allOption = document.createElement('option');
+    allOption.value = 'all';
+    allOption.textContent = 'Todos';
+    defaultCategorySelect.appendChild(allOption);
+
+    for (const category of state.store.categories || []) {
+      const option = document.createElement('option');
+      option.value = category.id;
+      option.textContent = category.name;
+      defaultCategorySelect.appendChild(option);
+    }
+
+    const isValidSelection =
+      desiredDefaultCategoryId === 'all' ||
+      (state.store.categories || []).some((category) => category.id === desiredDefaultCategoryId);
+    defaultCategorySelect.value = isValidSelection ? desiredDefaultCategoryId : 'all';
+  }
 
   dom.primaryColorPicker.value = primaryColor;
   dom.secondaryColorPicker.value = secondaryColor;
@@ -1335,16 +1358,25 @@ async function onSaveGeneral(event) {
 
   const primaryColor = normalizeHexColor(dom.generalForm.elements.primaryColor.value);
   const secondaryColor = normalizeHexColor(dom.generalForm.elements.secondaryColor.value);
+  const defaultCategoryId = String(dom.generalForm.elements.defaultCategoryId.value || 'all').trim() || 'all';
 
   const payload = {
     storeName: dom.generalForm.elements.storeName.value.trim(),
     currency: dom.generalForm.elements.currency.value.trim().toUpperCase(),
     currencySymbol: dom.generalForm.elements.currencySymbol.value.trim(),
+    defaultCategoryId,
     primaryColor,
     secondaryColor
   };
 
-  if (!payload.storeName || !payload.currency || !payload.currencySymbol || !primaryColor || !secondaryColor) {
+  if (
+    !payload.storeName ||
+    !payload.currency ||
+    !payload.currencySymbol ||
+    !payload.defaultCategoryId ||
+    !primaryColor ||
+    !secondaryColor
+  ) {
     showStatus('Completa general y usa colores HEX validos (#RRGGBB).', 'error');
     return;
   }
@@ -1387,6 +1419,7 @@ async function saveSettings(partialPayload, successMessage) {
     whatsappFooter: current.whatsappFooter || '',
     currency: current.currency || 'ARS',
     currencySymbol: current.currencySymbol || '$',
+    defaultCategoryId: String(current.defaultCategoryId || 'all') || 'all',
     primaryColor: normalizeHexColor(current.primaryColor) || DEFAULT_PRIMARY_COLOR,
     secondaryColor: normalizeHexColor(current.secondaryColor) || DEFAULT_SECONDARY_COLOR,
     ...partialPayload

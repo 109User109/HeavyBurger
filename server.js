@@ -366,7 +366,15 @@ function sanitizeHexColor(value, fallback) {
   return /^#[0-9A-F]{6}$/.test(candidate) ? candidate : fallback;
 }
 
-function withSettingsDefaults(settings = {}) {
+function normalizeDefaultCategoryId(rawValue, categories = []) {
+  const candidate = sanitizeText(rawValue, 'all') || 'all';
+  if (candidate === 'all') return 'all';
+
+  const exists = Array.isArray(categories) && categories.some((category) => category?.id === candidate);
+  return exists ? candidate : 'all';
+}
+
+function withSettingsDefaults(settings = {}, categories = []) {
   return {
     storeName: sanitizeText(settings.storeName, 'Nocturna Store') || 'Nocturna Store',
     whatsappNumber: sanitizePhone(settings.whatsappNumber || ''),
@@ -375,6 +383,7 @@ function withSettingsDefaults(settings = {}) {
       'Sigue disponible? Me interesa comprar por WhatsApp.',
     currency: sanitizeText(settings.currency, 'ARS').toUpperCase() || 'ARS',
     currencySymbol: sanitizeText(settings.currencySymbol, '$') || '$',
+    defaultCategoryId: normalizeDefaultCategoryId(settings.defaultCategoryId, categories),
     primaryColor: sanitizeHexColor(settings.primaryColor, DEFAULT_PRIMARY_COLOR),
     secondaryColor: sanitizeHexColor(settings.secondaryColor, DEFAULT_SECONDARY_COLOR)
   };
@@ -966,7 +975,7 @@ app.post('/api/admin/logout', (req, res) => {
 app.get('/api/store', async (_, res) => {
   try {
     const store = await readStoreWithPromotionCleanup();
-    store.settings = withSettingsDefaults(store.settings);
+    store.settings = withSettingsDefaults(store.settings, store.categories);
     store.products = Array.isArray(store.products)
       ? store.products.map((product) => normalizeProductForStore(product))
       : [];
@@ -979,13 +988,17 @@ app.get('/api/store', async (_, res) => {
 app.put('/api/settings', requireAdminAuth, async (req, res) => {
   try {
     const store = await readStoreWithPromotionCleanup();
-    const currentSettings = withSettingsDefaults(store.settings);
+    const currentSettings = withSettingsDefaults(store.settings, store.categories);
 
     const storeName = sanitizeText(req.body.storeName, currentSettings.storeName);
     const whatsappNumber = sanitizePhone(req.body.whatsappNumber || currentSettings.whatsappNumber);
     const whatsappFooter = sanitizeText(req.body.whatsappFooter, currentSettings.whatsappFooter);
     const currency = sanitizeText(req.body.currency, currentSettings.currency).toUpperCase();
     const currencySymbol = sanitizeText(req.body.currencySymbol, currentSettings.currencySymbol);
+    const defaultCategoryId = normalizeDefaultCategoryId(
+      req.body.defaultCategoryId !== undefined ? req.body.defaultCategoryId : currentSettings.defaultCategoryId,
+      store.categories
+    );
     const primaryColor = sanitizeHexColor(req.body.primaryColor, currentSettings.primaryColor);
     const secondaryColor = sanitizeHexColor(req.body.secondaryColor, currentSettings.secondaryColor);
 
@@ -1009,6 +1022,7 @@ app.put('/api/settings', requireAdminAuth, async (req, res) => {
       whatsappFooter,
       currency,
       currencySymbol,
+      defaultCategoryId,
       primaryColor,
       secondaryColor
     };
@@ -1112,6 +1126,9 @@ app.delete('/api/categories/:id', requireAdminAuth, async (req, res) => {
     }
 
     store.categories.splice(index, 1);
+    if (store.settings) {
+      store.settings.defaultCategoryId = normalizeDefaultCategoryId(store.settings.defaultCategoryId, store.categories);
+    }
     await writeStore(store);
 
     res.status(204).end();
