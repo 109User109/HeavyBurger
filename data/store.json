@@ -13,6 +13,16 @@
       "id": "cat-hamburguesas",
       "slug": "hamburguesas",
       "name": "Hamburguesas"
+    },
+    {
+      "id": "cat-bebidas-con-alcohol",
+      "slug": "bebidas-con-alcohol",
+      "name": "Bebidas con alcohol"
+    },
+    {
+      "id": "cat-bebidas",
+      "slug": "bebidas",
+      "name": "Bebidas"
     }
   ],
   "products": [
@@ -234,6 +244,162 @@
       "extras": [],
       "image": "",
       "createdAt": "2026-04-28T17:15:12.124679Z"
+    },
+    {
+      "id": "prod-heineken-contenido-473-ml",
+      "name": "Heineken",
+      "description": "Contenido: 473 ml",
+      "price": 4800.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:28.015966Z"
+    },
+    {
+      "id": "prod-brahma-contenido-473-ml",
+      "name": "Brahma",
+      "description": "Contenido: 473 ml",
+      "price": 3700.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:29.015966Z"
+    },
+    {
+      "id": "prod-amstel-contenido-473-ml",
+      "name": "Amstel",
+      "description": "Contenido: 473 ml",
+      "price": 3000.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:30.015966Z"
+    },
+    {
+      "id": "prod-quilmes-contenido-473-ml",
+      "name": "Quilmes",
+      "description": "Contenido: 473 ml",
+      "price": 3700.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:31.015966Z"
+    },
+    {
+      "id": "prod-budweiser-contenido-473-ml",
+      "name": "Budweiser",
+      "description": "Contenido: 473 ml",
+      "price": 3700.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:32.015966Z"
+    },
+    {
+      "id": "prod-corona-contenido-473-ml",
+      "name": "Corona",
+      "description": "Contenido: 473 ml",
+      "price": 4500.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:33.015966Z"
+    },
+    {
+      "id": "prod-golden-contenido-473-ml",
+      "name": "Golden",
+      "description": "Contenido: 473 ml",
+      "price": 3500.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:34.015966Z"
+    },
+    {
+      "id": "prod-1890-contenido-473-ml",
+      "name": "1890",
+      "description": "Contenido: 473 ml",
+      "price": 3700.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas-con-alcohol",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:35.015966Z"
+    },
+    {
+      "id": "prod-coca-cola-contenido-15l",
+      "name": "Coca Cola",
+      "description": "Contenido: 1.5L",
+      "price": 5500.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:37.015966Z"
+    },
+    {
+      "id": "prod-fanta-contenido-15l",
+      "name": "Fanta",
+      "description": "Contenido: 1.5L",
+      "price": 5500.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:38.015966Z"
+    },
+    {
+      "id": "prod-sprite-contenido-15l",
+      "name": "Sprite",
+      "description": "Contenido: 1.5L",
+      "price": 5500.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:39.015966Z"
+    },
+    {
+      "id": "prod-coca-cola-lata",
+      "name": "Coca Cola",
+      "description": "Lata",
+      "price": 2000.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:40.015966Z"
+    },
+    {
+      "id": "prod-sprite-lata",
+      "name": "Sprite",
+      "description": "Lata",
+      "price": 2000.0,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-bebidas",
+      "extras": [],
+      "image": "",
+      "createdAt": "2026-04-29T20:17:41.015966Z"
     }
   ]
 }
