@@ -1,19 +1,19 @@
 ﻿:root {
   color-scheme: dark;
-  --theme-primary: #15314b;
-  --theme-secondary: #3d8fcf;
-  --theme-primary-rgb: 21, 49, 75;
-  --theme-secondary-rgb: 61, 143, 207;
-  --theme-secondary-light: #74acd8;
-  --bg: #08182a;
-  --panel: #10243a;
-  --panel-soft: #0d1e32;
-  --text: #eef6ff;
-  --muted: #bfd0e2;
+  --theme-primary: #0b0b0d;
+  --theme-secondary: #c43a40;
+  --theme-primary-rgb: 11, 11, 13;
+  --theme-secondary-rgb: 196, 58, 64;
+  --theme-secondary-light: #de6a6f;
+  --bg: #0a0a0b;
+  --panel: #1c1a1b;
+  --panel-soft: #121112;
+  --text: #fff9f2;
+  --muted: #d8d1ca;
   --accent: var(--theme-secondary);
   --accent-soft: rgba(var(--theme-secondary-rgb), 0.2);
-  --danger: #fb7185;
-  --border: rgba(166, 198, 225, 0.26);
+  --danger: #e85d64;
+  --border: rgba(255, 249, 242, 0.18);
 }
 
 * {
@@ -28,7 +28,7 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top right, #163653 0%, #08182a 62%);
+  background: radial-gradient(circle at top right, #351114 0%, #0a0a0b 62%);
   color: var(--text);
 }
 
@@ -428,7 +428,7 @@ input.invalid {
 
 .primary-btn {
   background: linear-gradient(130deg, var(--theme-secondary), var(--theme-secondary-light));
-  color: #f2f8ff;
+  color: #fff9f2;
   font-weight: 700;
 }
 
@@ -541,7 +541,7 @@ input.invalid {
   font-weight: 700;
   letter-spacing: 0.04em;
   background: rgba(var(--theme-secondary-rgb), 0.96);
-  color: #f2f8ff;
+  color: #fff9f2;
 }
 
 .preview-thumb.adjusting {
@@ -705,7 +705,7 @@ input.invalid {
   width: min(520px, 94vw);
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: linear-gradient(170deg, #121821, #0c1218);
+  background: linear-gradient(170deg, #171313, #0f0d0d);
   padding: 0.9rem;
   display: grid;
   gap: 0.8rem;

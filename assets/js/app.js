@@ -14,8 +14,8 @@
   }
 };
 
-const DEFAULT_PRIMARY_COLOR = '#15314B';
-const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
+const DEFAULT_PRIMARY_COLOR = '#0B0B0D';
+const DEFAULT_SECONDARY_COLOR = '#C43A40';
 const PRODUCT_MODE_SINGLE = 'single';
 const PRODUCT_MODE_VARIANTS = 'variants';
 
@@ -48,6 +48,7 @@ const dom = {
   configBasePrice: document.getElementById('config-base-price'),
   configVariantsSection: document.getElementById('config-variants-section'),
   configVariantsList: document.getElementById('config-variants-list'),
+  configExtrasSection: document.getElementById('config-extras-section'),
   configExtrasList: document.getElementById('config-extras-list'),
   configNote: document.getElementById('config-note'),
   configQuantity: document.getElementById('config-quantity'),
@@ -677,11 +678,11 @@ function renderConfiguratorExtras() {
   dom.configExtrasList.innerHTML = '';
 
   if (!state.configurator.extras.length) {
-    dom.configExtrasList.innerHTML =
-      '<p class="empty-cart">Este producto no tiene extras configurados.</p>';
+    dom.configExtrasSection.hidden = true;
     return;
   }
 
+  dom.configExtrasSection.hidden = false;
   const fragment = document.createDocumentFragment();
 
   for (let index = 0; index < state.configurator.extras.length; index += 1) {
