@@ -37,11 +37,17 @@ const state = {
   }
 };
 
-const DEFAULT_PRIMARY_COLOR = '#15314B';
-const DEFAULT_SECONDARY_COLOR = '#2E7EB8';
+const DEFAULT_PRIMARY_COLOR = '#0B0B0D';
+const DEFAULT_SECONDARY_COLOR = '#C43A40';
 const HEARTBEAT_INTERVAL_MS = 60000;
 const PRODUCT_MODE_SINGLE = 'single';
 const PRODUCT_MODE_VARIANTS = 'variants';
+const CLIPBOARD_IMAGE_EXTENSION_BY_TYPE = new Map([
+  ['image/png', 'png'],
+  ['image/jpeg', 'jpg'],
+  ['image/webp', 'webp'],
+  ['image/gif', 'gif']
+]);
 
 const dom = {
   status: document.getElementById('status'),
@@ -197,6 +203,7 @@ function bindEvents() {
     dom.cameraInput.value = '';
     dom.cameraInput.click();
   });
+  document.addEventListener('paste', onPasteImageFromClipboard);
   dom.productForm.elements.removeImage.addEventListener('change', onRemoveImageToggle);
 
   dom.toggleImageAdjust.addEventListener('click', onToggleImageAdjust);
@@ -1752,6 +1759,65 @@ async function onImageInputChange(event, source) {
   dom.imageAdjustHint.textContent = 'Arrastra dentro de la tarjeta y usa zoom para ajustar.';
   renderPreviewCard();
   showStatus('Imagen seleccionada. Ajustala directamente en la tarjeta.', 'success');
+}
+
+function onPasteImageFromClipboard(event) {
+  if (!shouldHandleProductImagePaste(event)) return;
+
+  const file = getImageFileFromClipboard(event.clipboardData);
+  if (!file) return;
+
+  event.preventDefault();
+
+  loadPastedImageFile(file).catch((error) => {
+    console.error(error);
+    showStatus('No se pudo pegar la imagen del portapapeles.', 'error');
+  });
+}
+
+function shouldHandleProductImagePaste(event) {
+  if (state.activeSection !== 'products') return false;
+
+  const productSection = dom.productForm.closest('[data-admin-section]');
+  if (!productSection || productSection.hidden) return false;
+
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('#promotion-modal') && !dom.promotionModal.hidden) return false;
+
+  return true;
+}
+
+function getImageFileFromClipboard(clipboardData) {
+  if (!clipboardData) return null;
+
+  const items = Array.from(clipboardData.items || []);
+  for (const item of items) {
+    if (item.kind !== 'file' || !item.type.startsWith('image/')) continue;
+
+    const file = item.getAsFile();
+    if (file) return file;
+  }
+
+  const files = Array.from(clipboardData.files || []);
+  return files.find((file) => file.type.startsWith('image/')) || null;
+}
+
+async function loadPastedImageFile(sourceFile) {
+  const type = sourceFile.type || 'image/png';
+  const extension = CLIPBOARD_IMAGE_EXTENSION_BY_TYPE.get(type) || 'png';
+  const file = new File([sourceFile], `clipboard-${Date.now()}.${extension}`, { type });
+  const objectUrl = URL.createObjectURL(file);
+
+  dom.imageFileInput.value = '';
+  dom.cameraInput.value = '';
+  dom.productForm.elements.removeImage.checked = false;
+
+  await setImageSource({ url: objectUrl, mode: 'new', file, dirty: true, localObjectUrl: objectUrl });
+
+  setEditorActive(true);
+  dom.imageAdjustHint.textContent = 'Arrastra dentro de la tarjeta y usa zoom para ajustar.';
+  renderPreviewCard();
+  showStatus('Imagen pegada. Ajustala directamente en la tarjeta.', 'success');
 }
 
 async function onRemoveImageToggle() {
