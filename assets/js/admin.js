@@ -42,6 +42,10 @@ const DEFAULT_SECONDARY_COLOR = '#C43A40';
 const HEARTBEAT_INTERVAL_MS = 60000;
 const PRODUCT_MODE_SINGLE = 'single';
 const PRODUCT_MODE_VARIANTS = 'variants';
+const PROMOTION_RECURRENCE_NONE = 'none';
+const PROMOTION_RECURRENCE_WEEKLY = 'weekly';
+const PROMOTION_INDEFINITE_END_DATE = '9999-12-31';
+const WEEKDAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
 const CLIPBOARD_IMAGE_EXTENSION_BY_TYPE = new Map([
   ['image/png', 'png'],
   ['image/jpeg', 'jpg'],
@@ -107,8 +111,20 @@ const dom = {
   promotionDiscount: document.getElementById('promotion-discount'),
   promotionFixedPriceWrap: document.getElementById('promotion-fixed-price-wrap'),
   promotionFixedPrice: document.getElementById('promotion-fixed-price'),
+  promotionStartWrap: document.getElementById('promotion-start-wrap'),
+  promotionEndWrap: document.getElementById('promotion-end-wrap'),
   promotionStart: document.getElementById('promotion-start'),
-  promotionEnd: document.getElementById('promotion-end')
+  promotionEnd: document.getElementById('promotion-end'),
+  promotionRecurrence: document.getElementById('promotion-recurrence'),
+  promotionWeeklyDaysWrap: document.getElementById('promotion-weekly-days-wrap'),
+  promotionWeeklyScheduleWrap: document.getElementById('promotion-weekly-schedule-wrap'),
+  promotionWeeklyNoEnd: document.getElementById('promotion-weekly-no-end'),
+  promotionWeeklyAllDay: document.getElementById('promotion-weekly-all-day'),
+  promotionWeeklyStartDate: document.getElementById('promotion-weekly-start-date'),
+  promotionWeeklyEndDate: document.getElementById('promotion-weekly-end-date'),
+  promotionWeeklyStartTime: document.getElementById('promotion-weekly-start-time'),
+  promotionWeeklyEndTime: document.getElementById('promotion-weekly-end-time'),
+  promotionWeekdayInputs: Array.from(document.querySelectorAll('[data-promotion-weekday]'))
 };
 
 init().catch((error) => {
@@ -195,6 +211,9 @@ function bindEvents() {
   dom.promotionModalClose.addEventListener('click', closePromotionModal);
   dom.promotionModalCancel.addEventListener('click', closePromotionModal);
   dom.promotionType.addEventListener('change', onPromotionTypeChange);
+  dom.promotionRecurrence.addEventListener('change', onPromotionRecurrenceChange);
+  dom.promotionWeeklyNoEnd.addEventListener('change', syncWeeklyOptionControls);
+  dom.promotionWeeklyAllDay.addEventListener('change', syncWeeklyOptionControls);
   dom.promotionModalForm.addEventListener('submit', onPromotionModalSubmit);
 
   dom.imageFileInput.addEventListener('change', (event) => onImageInputChange(event, 'gallery'));
@@ -616,6 +635,7 @@ function renderProducts() {
 
   dom.productsList.innerHTML = visibleProducts
     .map((product) => {
+      const isHidden = product.hidden === true;
       const promotionView = getPromotionPresentation(Number(product.price || 0), product.promotion);
       const priceLabel = promotionView.isActive
         ? `<span><s>${escapeHtml(formatMoney(product.price))}</s> <strong>${escapeHtml(
@@ -631,9 +651,11 @@ function renderProducts() {
         productMode === PRODUCT_MODE_VARIANTS
           ? `Con variantes: ${variants.length}`
           : 'Producto unico';
+      const visibilityLabel = isHidden ? 'Oculto' : 'Visible';
+      const visibilityTitle = isHidden ? 'Mostrar producto' : 'Ocultar producto';
 
       return `
-      <article class="product-item" data-product-id="${product.id}">
+      <article class="product-item ${isHidden ? 'is-hidden' : ''}" data-product-id="${product.id}">
         ${
           product.image
             ? `<img src="${escapeAttribute(product.image)}" alt="${escapeAttribute(product.name)}" />`
@@ -648,10 +670,14 @@ function renderProducts() {
             <span>Publicado: ${escapeHtml(formatDate(product.createdAt))}</span>
             <span>Tipo: ${escapeHtml(productModeLabel)}</span>
             <span>Extras configurados: ${normalizeProductExtras(product.extras).length}</span>
+            <span class="product-status-chip ${isHidden ? 'is-hidden' : 'is-visible'}">${visibilityLabel}</span>
             <span>${escapeHtml(product.description || 'Sin descripcion')}</span>
           </div>
         </div>
         <div class="product-actions">
+          <button type="button" class="icon-btn visibility-btn ${isHidden ? 'is-hidden' : ''}" data-action="toggle-product-visibility" aria-label="${visibilityTitle}" title="${visibilityTitle}">
+            ${getVisibilityIcon(isHidden)}
+          </button>
           <button type="button" class="outline-btn" data-action="edit-product">Editar</button>
           <button type="button" class="danger-btn" data-action="delete-product">Eliminar</button>
         </div>
@@ -659,6 +685,26 @@ function renderProducts() {
     `;
     })
     .join('');
+}
+
+function getVisibilityIcon(isHidden) {
+  if (isHidden) {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 3l18 18" />
+        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+        <path d="M9.1 5.3A9.8 9.8 0 0 1 12 4c5 0 8.5 4.5 10 8a15.2 15.2 0 0 1-3.1 4.6" />
+        <path d="M6.5 6.5A15.8 15.8 0 0 0 2 12c1.5 3.5 5 8 10 8a9.8 9.8 0 0 0 4.1-.9" />
+      </svg>
+    `;
+  }
+
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  `;
 }
 
 function normalizeMoney(value, fallback = 0) {
@@ -738,7 +784,8 @@ function normalizeProductForAdmin(product = {}) {
     productMode,
     variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
     price: basePrice,
-    extras: normalizeProductExtras(product.extras)
+    extras: normalizeProductExtras(product.extras),
+    hidden: product.hidden === true
   };
 }
 
@@ -1027,12 +1074,26 @@ function ensurePromotionDraft() {
     discountPercentage: 10,
     promotionalPrice: Number.isFinite(basePrice) && basePrice > 0 ? Number((basePrice * 0.9).toFixed(2)) : null,
     startAt: now.toISOString(),
-    endAt: end.toISOString()
+    endAt: end.toISOString(),
+    recurrence: PROMOTION_RECURRENCE_NONE,
+    recurringDays: []
   };
 }
 
 function onPromotionTypeChange() {
   syncPromotionTypeVisibility(dom.promotionType.value);
+}
+
+function onPromotionRecurrenceChange() {
+  const recurrence = dom.promotionRecurrence.value;
+
+  if (recurrence === PROMOTION_RECURRENCE_WEEKLY) {
+    syncWeeklyScheduleFieldsFromDateTimeInputs();
+  } else {
+    syncDateTimeInputsFromWeeklyScheduleFields();
+  }
+
+  syncPromotionRecurrenceVisibility(recurrence);
 }
 
 function syncPromotionTypeVisibility(type) {
@@ -1041,6 +1102,51 @@ function syncPromotionTypeVisibility(type) {
   dom.promotionFixedPriceWrap.hidden = isPercentage;
   dom.promotionDiscount.required = isPercentage;
   dom.promotionFixedPrice.required = !isPercentage;
+}
+
+function syncPromotionRecurrenceVisibility(recurrence) {
+  const isWeekly = recurrence === PROMOTION_RECURRENCE_WEEKLY;
+  dom.promotionStartWrap.hidden = isWeekly;
+  dom.promotionEndWrap.hidden = isWeekly;
+  dom.promotionWeeklyDaysWrap.hidden = !isWeekly;
+  dom.promotionWeeklyScheduleWrap.hidden = !isWeekly;
+  dom.promotionStart.required = !isWeekly;
+  dom.promotionEnd.required = !isWeekly;
+  dom.promotionWeeklyStartDate.required = isWeekly;
+  dom.promotionWeeklyEndDate.required = isWeekly;
+  dom.promotionWeeklyStartTime.required = isWeekly;
+  dom.promotionWeeklyEndTime.required = isWeekly;
+
+  for (const input of dom.promotionWeekdayInputs) {
+    input.required = false;
+  }
+
+  syncWeeklyOptionControls();
+}
+
+function syncWeeklyOptionControls() {
+  const isWeekly = dom.promotionRecurrence.value === PROMOTION_RECURRENCE_WEEKLY;
+  const noEndDate = isWeekly && dom.promotionWeeklyNoEnd.checked;
+  const allDay = isWeekly && dom.promotionWeeklyAllDay.checked;
+
+  dom.promotionWeeklyEndDate.disabled = noEndDate;
+  dom.promotionWeeklyEndDate.required = isWeekly && !noEndDate;
+
+  dom.promotionWeeklyStartTime.disabled = allDay;
+  dom.promotionWeeklyEndTime.disabled = allDay;
+  dom.promotionWeeklyStartTime.required = isWeekly && !allDay;
+  dom.promotionWeeklyEndTime.required = isWeekly && !allDay;
+
+  if (noEndDate) {
+    dom.promotionWeeklyEndDate.value = PROMOTION_INDEFINITE_END_DATE;
+  } else if (dom.promotionWeeklyEndDate.value === PROMOTION_INDEFINITE_END_DATE) {
+    dom.promotionWeeklyEndDate.value = '';
+  }
+
+  if (allDay) {
+    dom.promotionWeeklyStartTime.value = '00:00';
+    dom.promotionWeeklyEndTime.value = '23:59';
+  }
 }
 
 function openPromotionModal() {
@@ -1057,8 +1163,22 @@ function openPromotionModal() {
     draft.promotionalPrice !== null && draft.promotionalPrice !== undefined ? String(draft.promotionalPrice) : '';
   dom.promotionStart.value = toLocalDateTimeInputValue(draft.startAt);
   dom.promotionEnd.value = toLocalDateTimeInputValue(draft.endAt);
+  dom.promotionRecurrence.value = draft.recurrence || PROMOTION_RECURRENCE_NONE;
+  dom.promotionWeeklyNoEnd.checked =
+    Boolean(draft.noEndDate) || splitLocalDateTimeValue(dom.promotionEnd.value).date === PROMOTION_INDEFINITE_END_DATE;
+  dom.promotionWeeklyAllDay.checked =
+    Boolean(draft.allDay) ||
+    (splitLocalDateTimeValue(dom.promotionStart.value).time === '00:00' &&
+      splitLocalDateTimeValue(dom.promotionEnd.value).time === '23:59');
 
+  const recurringDays = new Set(normalizePromotionRecurringDays(draft.recurringDays));
+  for (const input of dom.promotionWeekdayInputs) {
+    input.checked = recurringDays.has(Number(input.value));
+  }
+
+  syncWeeklyScheduleFieldsFromDateTimeInputs();
   syncPromotionTypeVisibility(dom.promotionType.value);
+  syncPromotionRecurrenceVisibility(dom.promotionRecurrence.value);
   dom.promotionModal.hidden = false;
 }
 
@@ -1086,6 +1206,43 @@ function localDateTimeInputToIso(value) {
   return date.toISOString();
 }
 
+function splitLocalDateTimeValue(value) {
+  const raw = String(value || '').trim();
+  if (!raw.includes('T')) return { date: '', time: '' };
+
+  const [date, time = ''] = raw.split('T');
+  return {
+    date,
+    time: time.slice(0, 5)
+  };
+}
+
+function syncWeeklyScheduleFieldsFromDateTimeInputs() {
+  const start = splitLocalDateTimeValue(dom.promotionStart.value);
+  const end = splitLocalDateTimeValue(dom.promotionEnd.value);
+
+  dom.promotionWeeklyStartDate.value = start.date;
+  dom.promotionWeeklyStartTime.value = start.time;
+  dom.promotionWeeklyEndDate.value = end.date;
+  dom.promotionWeeklyEndTime.value = end.time;
+}
+
+function buildLocalDateTimeValue(dateValue, timeValue) {
+  const date = String(dateValue || '').trim();
+  const time = String(timeValue || '').trim();
+  if (!date || !time) return '';
+
+  return `${date}T${time}`;
+}
+
+function syncDateTimeInputsFromWeeklyScheduleFields() {
+  const startValue = buildLocalDateTimeValue(dom.promotionWeeklyStartDate.value, dom.promotionWeeklyStartTime.value);
+  const endValue = buildLocalDateTimeValue(dom.promotionWeeklyEndDate.value, dom.promotionWeeklyEndTime.value);
+
+  if (startValue) dom.promotionStart.value = startValue;
+  if (endValue) dom.promotionEnd.value = endValue;
+}
+
 function formatPromoDate(dateValue) {
   const timestamp = Date.parse(dateValue || '');
   if (!Number.isFinite(timestamp)) return 'sin fecha';
@@ -1096,10 +1253,90 @@ function formatPromoDate(dateValue) {
   }).format(new Date(timestamp));
 }
 
+function formatPromoDateOnly(dateValue) {
+  const timestamp = Date.parse(dateValue || '');
+  if (!Number.isFinite(timestamp)) return 'sin fecha';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'short'
+  }).format(new Date(timestamp));
+}
+
+function formatPromoTime(dateValue) {
+  const timestamp = Date.parse(dateValue || '');
+  if (!Number.isFinite(timestamp)) return '--:--';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(timestamp));
+}
+
+function normalizePromotionRecurringDays(rawDays) {
+  if (!Array.isArray(rawDays)) return [];
+
+  return [...new Set(rawDays.map((day) => Number(day)).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
+    .sort((a, b) => a - b);
+}
+
+function collectPromotionRecurringDaysFromModal() {
+  return dom.promotionWeekdayInputs
+    .filter((input) => input.checked)
+    .map((input) => Number(input.value))
+    .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6);
+}
+
+function formatPromotionRecurringDays(days = []) {
+  const normalizedDays = normalizePromotionRecurringDays(days);
+  if (!normalizedDays.length) return 'sin dias';
+  return normalizedDays.map((day) => WEEKDAY_LABELS[day]).join(', ');
+}
+
+function isWeeklyPromotionActive(promotion, nowMs = Date.now()) {
+  const days = normalizePromotionRecurringDays(promotion.recurringDays);
+  if (!days.length) return false;
+
+  const startTs = Date.parse(promotion.startAt || '');
+  const endTs = Date.parse(promotion.endAt || '');
+  if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) return false;
+
+  if (nowMs < startTs || nowMs > endTs) return false;
+
+  const now = new Date(nowMs);
+  if (!days.includes(now.getDay())) return false;
+
+  const start = new Date(startTs);
+  const end = new Date(endTs);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const startMinutes = start.getHours() * 60 + start.getMinutes();
+  const endMinutes = end.getHours() * 60 + end.getMinutes();
+
+  if (startMinutes <= endMinutes) {
+    return nowMinutes >= startMinutes && nowMinutes <= endMinutes;
+  }
+
+  return nowMinutes >= startMinutes || nowMinutes <= endMinutes;
+}
+
 function collectPromotionDraftFromModal() {
   const type = String(dom.promotionType.value || '').trim();
-  const startAt = localDateTimeInputToIso(dom.promotionStart.value);
-  const endAt = localDateTimeInputToIso(dom.promotionEnd.value);
+  const recurrence = String(dom.promotionRecurrence.value || PROMOTION_RECURRENCE_NONE).trim();
+  const noEndDate = recurrence === PROMOTION_RECURRENCE_WEEKLY && dom.promotionWeeklyNoEnd.checked;
+  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && dom.promotionWeeklyAllDay.checked;
+  const startValue =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY
+      ? buildLocalDateTimeValue(dom.promotionWeeklyStartDate.value, allDay ? '00:00' : dom.promotionWeeklyStartTime.value)
+      : dom.promotionStart.value;
+  const endValue =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY
+      ? buildLocalDateTimeValue(
+          noEndDate ? PROMOTION_INDEFINITE_END_DATE : dom.promotionWeeklyEndDate.value,
+          allDay ? '23:59' : dom.promotionWeeklyEndTime.value
+        )
+      : dom.promotionEnd.value;
+  const startAt = localDateTimeInputToIso(startValue);
+  const endAt = localDateTimeInputToIso(endValue);
+  const recurringDays = recurrence === PROMOTION_RECURRENCE_WEEKLY ? collectPromotionRecurringDaysFromModal() : [];
   const basePrice = Number(dom.productForm.elements.price.value);
 
   if (!Number.isFinite(basePrice) || basePrice < 0) {
@@ -1107,7 +1344,13 @@ function collectPromotionDraftFromModal() {
   }
 
   if (!startAt || !endAt) {
-    return { ok: false, error: 'Completa fecha de inicio y fin de promocion.' };
+    return {
+      ok: false,
+      error:
+        recurrence === PROMOTION_RECURRENCE_WEEKLY
+          ? 'Completa vigencia y horario de la promocion semanal.'
+          : 'Completa fecha de inicio y fin de promocion.'
+    };
   }
 
   const startTs = Date.parse(startAt);
@@ -1119,6 +1362,14 @@ function collectPromotionDraftFromModal() {
 
   if (endTs <= Date.now()) {
     return { ok: false, error: 'La fecha de fin debe estar en el futuro.' };
+  }
+
+  if (![PROMOTION_RECURRENCE_NONE, PROMOTION_RECURRENCE_WEEKLY].includes(recurrence)) {
+    return { ok: false, error: 'Selecciona una repeticion valida.' };
+  }
+
+  if (recurrence === PROMOTION_RECURRENCE_WEEKLY && !recurringDays.length) {
+    return { ok: false, error: 'Selecciona al menos un dia para repetir la promocion.' };
   }
 
   if (type === 'percentage') {
@@ -1133,7 +1384,11 @@ function collectPromotionDraftFromModal() {
         type: 'percentage',
         discountPercentage: Number(percentage.toFixed(2)),
         startAt,
-        endAt
+        endAt,
+        recurrence,
+        recurringDays,
+        noEndDate,
+        allDay
       }
     };
   }
@@ -1154,7 +1409,11 @@ function collectPromotionDraftFromModal() {
         type: 'fixed_price',
         promotionalPrice: Number(promotionalPrice.toFixed(2)),
         startAt,
-        endAt
+        endAt,
+        recurrence,
+        recurringDays,
+        noEndDate,
+        allDay
       }
     };
   }
@@ -1195,8 +1454,21 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
 
   const startAt = new Date(startTimestamp).toISOString();
   const endAt = new Date(endTimestamp).toISOString();
+  const recurrence =
+    rawPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY ? PROMOTION_RECURRENCE_WEEKLY : PROMOTION_RECURRENCE_NONE;
+  const recurringDays =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY ? normalizePromotionRecurringDays(rawPromotion.recurringDays) : [];
+  const noEndDate =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY &&
+    (rawPromotion.noEndDate === true || new Date(endTimestamp).getFullYear() >= 9999);
+  const allDay =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY &&
+    (rawPromotion.allDay === true ||
+      (splitLocalDateTimeValue(toLocalDateTimeInputValue(startAt)).time === '00:00' &&
+        splitLocalDateTimeValue(toLocalDateTimeInputValue(endAt)).time === '23:59'));
 
   if (startTimestamp >= endTimestamp) return null;
+  if (recurrence === PROMOTION_RECURRENCE_WEEKLY && !recurringDays.length) return null;
 
   if (type === 'percentage') {
     const percentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
@@ -1206,7 +1478,11 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
       type: 'percentage',
       discountPercentage: Number(percentage.toFixed(2)),
       startAt,
-      endAt
+      endAt,
+      recurrence,
+      recurringDays,
+      noEndDate,
+      allDay
     };
   }
 
@@ -1219,7 +1495,11 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
       type: 'fixed_price',
       promotionalPrice: Number(promotionalPrice.toFixed(2)),
       startAt,
-      endAt
+      endAt,
+      recurrence,
+      recurringDays,
+      noEndDate,
+      allDay
     };
   }
 
@@ -1228,6 +1508,11 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
 
 function isPromotionActive(promotion, nowMs = Date.now()) {
   if (!promotion) return false;
+
+  if (promotion.recurrence === PROMOTION_RECURRENCE_WEEKLY) {
+    return isWeeklyPromotionActive(promotion, nowMs);
+  }
+
   const startTs = Date.parse(promotion.startAt || '');
   const endTs = Date.parse(promotion.endAt || '');
   if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) return false;
@@ -1305,10 +1590,27 @@ function renderPromotionSummary() {
       : `Oferta: ${formatMoney(normalized.promotionalPrice)}`;
 
   const active = isPromotionActive(normalized);
-  const stateText = active ? 'activa' : Date.now() < Date.parse(normalized.startAt) ? 'programada' : 'vencida';
+  const now = Date.now();
+  const ended = now > Date.parse(normalized.endAt);
+  const stateText = active
+    ? 'activa'
+    : ended
+      ? 'vencida'
+      : now < Date.parse(normalized.startAt)
+      ? 'programada'
+      : normalized.recurrence === PROMOTION_RECURRENCE_WEEKLY
+        ? 'en pausa'
+        : 'vencida';
+  const scheduleText =
+    normalized.recurrence === PROMOTION_RECURRENCE_WEEKLY
+      ? `Semanal: ${formatPromotionRecurringDays(normalized.recurringDays)} · ${
+          normalized.allDay ? 'todo el dia' : `${formatPromoTime(normalized.startAt)} a ${formatPromoTime(normalized.endAt)}`
+        } · vigente desde ${formatPromoDateOnly(normalized.startAt)}${
+          normalized.noEndDate ? ' · sin fecha de fin' : ` hasta ${formatPromoDateOnly(normalized.endAt)}`
+        }`
+      : `${formatPromoDate(normalized.startAt)} a ${formatPromoDate(normalized.endAt)}`;
 
-  dom.promotionSummary.textContent =
-    `${detail} (${stateText}) · ${formatPromoDate(normalized.startAt)} a ${formatPromoDate(normalized.endAt)}`;
+  dom.promotionSummary.textContent = `${detail} (${stateText}) · ${scheduleText}`;
 }
 
 function collectPromotionPayloadForSubmit() {
@@ -1640,12 +1942,36 @@ function onProductAction(event) {
     return;
   }
 
+  if (action === 'toggle-product-visibility') {
+    toggleProductVisibility(productId).catch((error) => {
+      console.error(error);
+      showStatus(error.message || 'No se pudo cambiar la visibilidad del producto.', 'error');
+    });
+    return;
+  }
+
   if (action === 'delete-product') {
     deleteProduct(productId).catch((error) => {
       console.error(error);
       showStatus(error.message || 'No se pudo eliminar el producto.', 'error');
     });
   }
+}
+
+async function toggleProductVisibility(productId) {
+  const product = state.store.products.find((item) => item.id === productId);
+  if (!product) return;
+
+  const nextHidden = product.hidden !== true;
+
+  await requestJson(`/api/products/${productId}/visibility`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ hidden: nextHidden })
+  });
+
+  showStatus(nextHidden ? 'Producto oculto.' : 'Producto visible.', 'success');
+  await refreshStore();
 }
 
 async function deleteProduct(productId) {

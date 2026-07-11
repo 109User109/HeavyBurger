@@ -361,15 +361,62 @@
             <input id="promotion-fixed-price" type="number" min="0" step="0.01" placeholder="Ej: 7999" />
           </label>
 
-          <label>
-            Fecha de inicio de promo
+          <label id="promotion-start-wrap">
+            <span id="promotion-start-label">Fecha de inicio de promo</span>
             <input id="promotion-start" type="datetime-local" required />
           </label>
 
-          <label>
-            Fecha de fin de promo
+          <label id="promotion-end-wrap">
+            <span id="promotion-end-label">Fecha de fin de promo</span>
             <input id="promotion-end" type="datetime-local" required />
           </label>
+
+          <label>
+            Repeticion
+            <select id="promotion-recurrence">
+              <option value="none">No repetir</option>
+              <option value="weekly">Repetir semanalmente</option>
+            </select>
+          </label>
+
+          <fieldset id="promotion-weekly-days-wrap" class="promotion-weekly-days" hidden>
+            <legend>Dias de repeticion</legend>
+            <label><input type="checkbox" value="1" data-promotion-weekday /> Lun</label>
+            <label><input type="checkbox" value="2" data-promotion-weekday /> Mar</label>
+            <label><input type="checkbox" value="3" data-promotion-weekday /> Mie</label>
+            <label><input type="checkbox" value="4" data-promotion-weekday /> Jue</label>
+            <label><input type="checkbox" value="5" data-promotion-weekday /> Vie</label>
+            <label><input type="checkbox" value="6" data-promotion-weekday /> Sab</label>
+            <label><input type="checkbox" value="0" data-promotion-weekday /> Dom</label>
+          </fieldset>
+
+          <fieldset id="promotion-weekly-schedule-wrap" class="promotion-weekly-schedule" hidden>
+            <legend>Vigencia y horario semanal</legend>
+            <label class="checkbox-row promotion-schedule-toggle">
+              <input id="promotion-weekly-no-end" type="checkbox" />
+              Sin fecha de fin
+            </label>
+            <label class="checkbox-row promotion-schedule-toggle">
+              <input id="promotion-weekly-all-day" type="checkbox" />
+              Todo el dia
+            </label>
+            <label>
+              Vigente desde
+              <input id="promotion-weekly-start-date" type="date" />
+            </label>
+            <label>
+              Vigente hasta
+              <input id="promotion-weekly-end-date" type="date" />
+            </label>
+            <label>
+              Horario desde
+              <input id="promotion-weekly-start-time" type="time" />
+            </label>
+            <label>
+              Horario hasta
+              <input id="promotion-weekly-end-time" type="time" />
+            </label>
+          </fieldset>
 
           <div class="actions">
             <button id="promotion-modal-cancel" type="button" class="ghost-btn">Cancelar</button>

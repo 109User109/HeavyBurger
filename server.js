@@ -24,6 +24,9 @@ const UPLOADS_DIR = path.join(STORAGE_ROOT, 'uploads');
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif']);
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
 const ALLOWED_PROMOTION_TYPES = new Set(['percentage', 'fixed_price']);
+const PROMOTION_RECURRENCE_NONE = 'none';
+const PROMOTION_RECURRENCE_WEEKLY = 'weekly';
+const ALLOWED_PROMOTION_RECURRENCES = new Set([PROMOTION_RECURRENCE_NONE, PROMOTION_RECURRENCE_WEEKLY]);
 const PRODUCT_MODE_SINGLE = 'single';
 const PRODUCT_MODE_VARIANTS = 'variants';
 const ALLOWED_PRODUCT_MODES = new Set([PRODUCT_MODE_SINGLE, PRODUCT_MODE_VARIANTS]);
@@ -253,7 +256,8 @@ function normalizeProductForStore(rawProduct = {}, nowMs = Date.now()) {
     productMode,
     variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
     extras: normalizeProductExtras(product.extras),
-    price: safePrice
+    price: safePrice,
+    hidden: product.hidden === true
   };
 
   if (normalizedPromotion) {
@@ -275,11 +279,27 @@ function parsePromotionDate(value) {
   return new Date(timestamp).toISOString();
 }
 
+function normalizePromotionRecurringDays(rawDays) {
+  if (!Array.isArray(rawDays)) return [];
+
+  return [...new Set(rawDays.map((day) => Number(day)).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
+    .sort((a, b) => a - b);
+}
+
 function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
   if (!rawPromotion || typeof rawPromotion !== 'object') return null;
 
   const type = sanitizeText(rawPromotion.type, '').toLowerCase();
   if (!ALLOWED_PROMOTION_TYPES.has(type)) return null;
+  const recurrence = ALLOWED_PROMOTION_RECURRENCES.has(sanitizeText(rawPromotion.recurrence, PROMOTION_RECURRENCE_NONE))
+    ? sanitizeText(rawPromotion.recurrence, PROMOTION_RECURRENCE_NONE)
+    : PROMOTION_RECURRENCE_NONE;
+  const recurringDays =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY ? normalizePromotionRecurringDays(rawPromotion.recurringDays) : [];
+  const noEndDate =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY &&
+    (rawPromotion.noEndDate === true || new Date(Date.parse(rawPromotion.endAt || rawPromotion.endDate || '')).getFullYear() >= 9999);
+  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && rawPromotion.allDay === true;
 
   const startAt = parsePromotionDate(rawPromotion.startAt || rawPromotion.startDate);
   const endAt = parsePromotionDate(rawPromotion.endAt || rawPromotion.endDate);
@@ -297,6 +317,10 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
     return null;
   }
 
+  if (recurrence === PROMOTION_RECURRENCE_WEEKLY && !recurringDays.length) {
+    return null;
+  }
+
   if (type === 'percentage') {
     const percentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
     if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) return null;
@@ -305,7 +329,11 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
       type: 'percentage',
       discountPercentage: Number(percentage.toFixed(2)),
       startAt,
-      endAt
+      endAt,
+      recurrence,
+      recurringDays,
+      noEndDate,
+      allDay
     };
   }
 
@@ -317,7 +345,11 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
     type: 'fixed_price',
     promotionalPrice,
     startAt,
-    endAt
+    endAt,
+    recurrence,
+    recurringDays,
+    noEndDate,
+    allDay
   };
 }
 
@@ -972,12 +1004,15 @@ app.post('/api/admin/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/api/store', async (_, res) => {
+app.get('/api/store', async (req, res) => {
   try {
     const store = await readStoreWithPromotionCleanup();
     store.settings = withSettingsDefaults(store.settings, store.categories);
+    const requesterIsAdmin = isRequesterSessionOwner(req);
     store.products = Array.isArray(store.products)
-      ? store.products.map((product) => normalizeProductForStore(product))
+      ? store.products
+          .map((product) => normalizeProductForStore(product))
+          .filter((product) => requesterIsAdmin || !product.hidden)
       : [];
     res.json(store);
   } catch {
@@ -1206,6 +1241,7 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       categoryId,
       extras,
       image: req.file ? `/uploads/${req.file.filename}` : '',
+      hidden: false,
       createdAt: new Date().toISOString()
     };
 
@@ -1338,6 +1374,34 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
   } catch {
     if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
     res.status(500).json({ error: 'Could not update product.' });
+  }
+});
+
+app.patch('/api/products/:id/visibility', requireAdminAuth, async (req, res) => {
+  try {
+    const rawHidden = req.body?.hidden;
+    const hasValidHidden = rawHidden === true || rawHidden === false || rawHidden === 'true' || rawHidden === 'false';
+
+    if (!hasValidHidden) {
+      res.status(400).json({ error: 'Hidden state is required.' });
+      return;
+    }
+
+    const store = await readStoreWithPromotionCleanup();
+    const productId = req.params.id;
+    const product = store.products.find((item) => item.id === productId);
+
+    if (!product) {
+      res.status(404).json({ error: 'Product not found.' });
+      return;
+    }
+
+    product.hidden = rawHidden === true || rawHidden === 'true';
+    await writeStore(store);
+
+    res.json(normalizeProductForStore(product));
+  } catch {
+    res.status(500).json({ error: 'Could not update product visibility.' });
   }
 });
 

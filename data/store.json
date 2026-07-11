@@ -10,14 +10,19 @@
   },
   "categories": [
     {
-      "id": "cat-hamburguesas",
-      "slug": "hamburguesas",
-      "name": "Hamburguesas"
+      "id": "cat-burgers",
+      "slug": "burgers",
+      "name": "Burgers"
     },
     {
-      "id": "cat-bebidas-con-alcohol",
-      "slug": "bebidas-con-alcohol",
-      "name": "Bebidas con alcohol"
+      "id": "cat-papas",
+      "slug": "papas",
+      "name": "Papas"
+    },
+    {
+      "id": "cat-bocaditos",
+      "slug": "bocaditos",
+      "name": "Bocaditos"
     },
     {
       "id": "cat-bebidas",
@@ -27,379 +32,561 @@
   ],
   "products": [
     {
-      "id": "prod-cheesy",
-      "name": "Cheesy",
-      "description": "pan de papa, carne, cheddar",
-      "price": 7500.0,
+      "id": "prod-chessy",
+      "name": "Chessy",
+      "description": "Pan de papa, blend de carne 120gr, cheddar.",
+      "price": 10000,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-cheesy-simple",
+          "id": "variant-mrcp41tmgf4jqk",
           "name": "Simple",
-          "price": 7500.0
+          "price": 10000
         },
         {
-          "id": "var-cheesy-doble",
+          "id": "variant-mrcp41tmvf7ccn",
           "name": "Doble",
-          "price": 10000.0
-        },
-        {
-          "id": "var-cheesy-triple",
-          "name": "Triple",
-          "price": 12000.0
+          "price": 12500
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-burgers",
       "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:05.124679Z"
+      "image": "/uploads/1783552506679-549372097.jpg",
+      "createdAt": "2026-07-08T23:12:00.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-urban",
-      "name": "Urban",
-      "description": "pan de papa, carne, cheddar, bacon, huevo",
-      "price": 9500.0,
+      "id": "prod-american",
+      "name": "American",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, tomate, lechuga, salsa tasty.",
+      "price": 10500,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-urban-simple",
+          "id": "variant-mrcp4fwe5c2i6l",
           "name": "Simple",
-          "price": 9500.0
+          "price": 10500
         },
         {
-          "id": "var-urban-doble",
+          "id": "variant-mrcp4fwe0ekvca",
           "name": "Doble",
-          "price": 12000.0
-        },
-        {
-          "id": "var-urban-triple",
-          "name": "Triple",
-          "price": 14000.0
+          "price": 13000
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-burgers",
       "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:06.124679Z"
+      "image": "/uploads/1783552524924-784208457.jpg",
+      "createdAt": "2026-07-08T23:12:01.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-fundida",
-      "name": "Fundida",
-      "description": "pan de papa, carne, cheddar, bacon",
-      "price": 8500.0,
+      "id": "prod-cuarto-453gr",
+      "name": "Cuarto 453gr",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, cebolla brunoise, ketchup, mostaza.",
+      "price": 10500,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-fundida-simple",
+          "id": "variant-mrcp4uwcyx0l62",
           "name": "Simple",
-          "price": 8500.0
+          "price": 10500
         },
         {
-          "id": "var-fundida-doble",
+          "id": "variant-mrcp4uwcia1bp7",
           "name": "Doble",
-          "price": 11000.0
-        },
-        {
-          "id": "var-fundida-triple",
-          "name": "Triple",
-          "price": 13000.0
+          "price": 13000
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-burgers",
       "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:07.124679Z"
-    },
-    {
-      "id": "prod-matona",
-      "name": "Matona",
-      "description": "pan de papa, carne, cheddar, bacon, huevo, lechuga, tomate",
-      "price": 11000.0,
-      "productMode": "variants",
-      "variants": [
-        {
-          "id": "var-matona-simple",
-          "name": "Simple",
-          "price": 11000.0
-        },
-        {
-          "id": "var-matona-doble",
-          "name": "Doble",
-          "price": 12500.0
-        },
-        {
-          "id": "var-matona-triple",
-          "name": "Triple",
-          "price": 14500.0
-        }
-      ],
-      "categoryId": "cat-hamburguesas",
-      "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:08.124679Z"
+      "image": "/uploads/1783552544363-374580950.jpg",
+      "createdAt": "2026-07-08T23:12:02.000Z",
+      "hidden": false
     },
     {
       "id": "prod-canchera",
       "name": "Canchera",
-      "description": "pan de papa, carne, queso tybo, jamón, lechuga, tomate",
-      "price": 10000.0,
+      "description": "Pan de papa, blend de carne 120gr, queso tybo, jamón, lechuga, tomate.",
+      "price": 11000,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-canchera-simple",
+          "id": "variant-mrcp548ae2q8rr",
           "name": "Simple",
-          "price": 10000.0
+          "price": 11000
         },
         {
-          "id": "var-canchera-doble",
+          "id": "variant-mrcp548axr3csi",
           "name": "Doble",
-          "price": 12500.0
-        },
-        {
-          "id": "var-canchera-triple",
-          "name": "Triple",
-          "price": 13000.0
+          "price": 13500
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-burgers",
       "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:09.124679Z"
+      "image": "/uploads/1783552556457-171728309.jpg",
+      "createdAt": "2026-07-08T23:12:03.000Z",
+      "hidden": false
+    },
+    {
+      "id": "prod-bacon",
+      "name": "Bacon",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, bacon.",
+      "price": 11500,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "variant-mrcp5job08lxrg",
+          "name": "Simple",
+          "price": 11500
+        },
+        {
+          "id": "variant-mrcp5jobygxj5u",
+          "name": "Doble",
+          "price": 14000
+        }
+      ],
+      "categoryId": "cat-burgers",
+      "extras": [],
+      "image": "/uploads/1783552576474-761897902.jpg",
+      "createdAt": "2026-07-08T23:12:04.000Z",
+      "hidden": false
+    },
+    {
+      "id": "prod-crispy",
+      "name": "Crispy",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, bacon, cebolla crispy.",
+      "price": 12500,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "variant-mrcp5w7kl0x5gq",
+          "name": "Simple",
+          "price": 12500
+        },
+        {
+          "id": "variant-mrcp5w7k4scav3",
+          "name": "Doble",
+          "price": 15000
+        }
+      ],
+      "categoryId": "cat-burgers",
+      "extras": [],
+      "image": "/uploads/1783552592719-64022371.jpg",
+      "createdAt": "2026-07-08T23:12:05.000Z",
+      "hidden": false
+    },
+    {
+      "id": "prod-urban",
+      "name": "Urban",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, bacon, huevo.",
+      "price": 12500,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "variant-mrcp66f9vk67gt",
+          "name": "Simple",
+          "price": 12500
+        },
+        {
+          "id": "variant-mrcp66f9aussvt",
+          "name": "Doble",
+          "price": 15000
+        }
+      ],
+      "categoryId": "cat-burgers",
+      "extras": [],
+      "image": "/uploads/1783552605956-371969399.jpg",
+      "createdAt": "2026-07-08T23:12:06.000Z",
+      "hidden": false
     },
     {
       "id": "prod-heavy-melt",
       "name": "Heavy Melt",
-      "description": "pan de papa, carne, cheddar (x3), bacon, cebolla caramelizada, salsa melt",
-      "price": 11000.0,
+      "description": "Pan de papa, blend de carne 120gr, cheddar x5, bacon, cebolla caramelizada, salsa melt.",
+      "price": 13500,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-heavy-melt-simple",
+          "id": "variant-mrcp6gi4ea2yai",
           "name": "Simple",
-          "price": 11000.0
+          "price": 13500
         },
         {
-          "id": "var-heavy-melt-doble",
+          "id": "variant-mrcp6gi4ise03q",
           "name": "Doble",
-          "price": 14500.0
-        },
-        {
-          "id": "var-heavy-melt-triple",
-          "name": "Triple",
-          "price": 16500.0
+          "price": 16000
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-burgers",
       "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:10.124679Z"
+      "image": "/uploads/1783552619019-912482515.jpg",
+      "createdAt": "2026-07-08T23:12:07.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-fort",
-      "name": "Fort",
-      "description": "pan de papa, carne, queso azul, rúcula, salsa fort",
-      "price": 12500.0,
+      "id": "prod-4-quesos",
+      "name": "4 Quesos",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, queso tybo, mozzarella, provoleta a la plancha.",
+      "price": 15000,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-fort-simple",
+          "id": "variant-mrcp6rfguboiz1",
           "name": "Simple",
-          "price": 12500.0
+          "price": 15000
         },
         {
-          "id": "var-fort-doble",
+          "id": "variant-mrcp6rfggugka2",
           "name": "Doble",
-          "price": 16000.0
-        },
-        {
-          "id": "var-fort-triple",
-          "name": "Triple",
-          "price": 19000.0
+          "price": 17500
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-burgers",
       "extras": [],
-      "image": "",
-      "createdAt": "2026-04-28T17:15:11.124679Z"
+      "image": "/uploads/1783552633179-373936619.jpg",
+      "createdAt": "2026-07-08T23:12:08.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-heavy-roots",
-      "name": "Heavy Roots",
-      "description": "pan de papa, carne 150gr, cheddar (x4), bacon (x3), huevo, cebolla caramelizada, salsa heavy",
-      "price": 17000.0,
+      "id": "prod-big-heavy",
+      "name": "Big Heavy",
+      "description": "Pan de tres niveles, blend de carne 120gr, bacon, lechuga, tomate, salsa heavy.",
+      "price": 16000,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-burgers",
+      "extras": [],
+      "image": "/uploads/1783552647940-944678571.jpg",
+      "createdAt": "2026-07-08T23:12:09.000Z",
+      "hidden": false
+    },
+    {
+      "id": "prod-ankara-messi",
+      "name": "Ankara Messi",
+      "description": "Pan de papa, blend de carne 120gr, cheddar, mozzarella, bacon, cebolla caramelizada, pepinillos, salsa stacker.",
+      "price": 16500,
+      "productMode": "single",
+      "variants": [],
+      "categoryId": "cat-burgers",
+      "extras": [],
+      "image": "/uploads/1783552659340-745718179.jpg",
+      "createdAt": "2026-07-08T23:12:10.000Z",
+      "hidden": false
+    },
+    {
+      "id": "prod-clasicas",
+      "name": "Clásicas",
+      "description": "Papas fritas clásicas.",
+      "price": 5000,
       "productMode": "variants",
       "variants": [
         {
-          "id": "var-heavy-roots-simple",
-          "name": "Simple",
-          "price": 17000.0
+          "id": "var-clasicas-200gr",
+          "name": "200gr",
+          "price": 5000
         },
         {
-          "id": "var-heavy-roots-doble",
-          "name": "Doble",
-          "price": 28000.0
+          "id": "var-clasicas-400gr",
+          "name": "400gr",
+          "price": 7500
+        },
+        {
+          "id": "var-clasicas-800gr",
+          "name": "800gr",
+          "price": 9000
         }
       ],
-      "categoryId": "cat-hamburguesas",
+      "categoryId": "cat-papas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-28T17:15:12.124679Z"
+      "createdAt": "2026-07-08T23:12:11.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-heineken-contenido-473-ml",
-      "name": "Heineken",
-      "description": "Contenido: 473 ml",
-      "price": 4800.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-a-caballo",
+      "name": "A caballo",
+      "description": "Papas con 2 huevos a la plancha.",
+      "price": 7000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-a-caballo-200gr",
+          "name": "200gr",
+          "price": 7000
+        },
+        {
+          "id": "var-a-caballo-400gr",
+          "name": "400gr",
+          "price": 9500
+        },
+        {
+          "id": "var-a-caballo-800gr",
+          "name": "800gr",
+          "price": 11000
+        }
+      ],
+      "categoryId": "cat-papas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:28.015966Z"
+      "createdAt": "2026-07-08T23:12:12.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-brahma-contenido-473-ml",
-      "name": "Brahma",
-      "description": "Contenido: 473 ml",
-      "price": 3700.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-cheddar",
+      "name": "Cheddar",
+      "description": "Papas con queso cheddar derretido.",
+      "price": 8000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-cheddar-200gr",
+          "name": "200gr",
+          "price": 8000
+        },
+        {
+          "id": "var-cheddar-400gr",
+          "name": "400gr",
+          "price": 10500
+        },
+        {
+          "id": "var-cheddar-800gr",
+          "name": "800gr",
+          "price": 12000
+        }
+      ],
+      "categoryId": "cat-papas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:29.015966Z"
+      "createdAt": "2026-07-08T23:12:13.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-amstel-contenido-473-ml",
-      "name": "Amstel",
-      "description": "Contenido: 473 ml",
-      "price": 3000.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-full-bacon",
+      "name": "Full Bacon",
+      "description": "Papas con queso cheddar derretido y bacon quebrado.",
+      "price": 10000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-full-bacon-200gr",
+          "name": "200gr",
+          "price": 10000
+        },
+        {
+          "id": "var-full-bacon-400gr",
+          "name": "400gr",
+          "price": 12500
+        },
+        {
+          "id": "var-full-bacon-800gr",
+          "name": "800gr",
+          "price": 14000
+        }
+      ],
+      "categoryId": "cat-papas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:30.015966Z"
+      "createdAt": "2026-07-08T23:12:14.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-quilmes-contenido-473-ml",
-      "name": "Quilmes",
-      "description": "Contenido: 473 ml",
-      "price": 3700.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-heavy",
+      "name": "Heavy",
+      "description": "Papas con queso cheddar derretido, bacon quebrado, ciboulette y 2 huevos a la plancha.",
+      "price": 12000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-heavy-200gr",
+          "name": "200gr",
+          "price": 12000
+        },
+        {
+          "id": "var-heavy-400gr",
+          "name": "400gr",
+          "price": 14500
+        },
+        {
+          "id": "var-heavy-800gr",
+          "name": "800gr",
+          "price": 16000
+        }
+      ],
+      "categoryId": "cat-papas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:31.015966Z"
+      "createdAt": "2026-07-08T23:12:15.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-budweiser-contenido-473-ml",
-      "name": "Budweiser",
-      "description": "Contenido: 473 ml",
-      "price": 3700.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-palitos",
+      "name": "Palitos",
+      "description": "Palitos.",
+      "price": 3000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-palitos-100gr",
+          "name": "100gr",
+          "price": 3000
+        },
+        {
+          "id": "var-palitos-150gr",
+          "name": "150gr",
+          "price": 4500
+        },
+        {
+          "id": "var-palitos-250gr",
+          "name": "250gr",
+          "price": 6500
+        },
+        {
+          "id": "var-palitos-400gr",
+          "name": "400gr",
+          "price": 10000
+        }
+      ],
+      "categoryId": "cat-bocaditos",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:32.015966Z"
+      "createdAt": "2026-07-08T23:12:16.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-corona-contenido-473-ml",
-      "name": "Corona",
-      "description": "Contenido: 473 ml",
-      "price": 4500.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-crunchies",
+      "name": "Crunchies",
+      "description": "Crunchies.",
+      "price": 4000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-crunchies-100gr",
+          "name": "100gr",
+          "price": 4000
+        },
+        {
+          "id": "var-crunchies-150gr",
+          "name": "150gr",
+          "price": 5500
+        },
+        {
+          "id": "var-crunchies-250gr",
+          "name": "250gr",
+          "price": 8500
+        },
+        {
+          "id": "var-crunchies-400gr",
+          "name": "400gr",
+          "price": 11000
+        }
+      ],
+      "categoryId": "cat-bocaditos",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:33.015966Z"
+      "createdAt": "2026-07-08T23:12:17.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-golden-contenido-473-ml",
-      "name": "Golden",
-      "description": "Contenido: 473 ml",
-      "price": 3500.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
+      "id": "prod-nuggets",
+      "name": "Nuggets",
+      "description": "Nuggets.",
+      "price": 6000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-nuggets-100gr",
+          "name": "100gr",
+          "price": 6000
+        },
+        {
+          "id": "var-nuggets-150gr",
+          "name": "150gr",
+          "price": 7500
+        },
+        {
+          "id": "var-nuggets-250gr",
+          "name": "250gr",
+          "price": 10000
+        },
+        {
+          "id": "var-nuggets-400gr",
+          "name": "400gr",
+          "price": 12500
+        }
+      ],
+      "categoryId": "cat-bocaditos",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:34.015966Z"
+      "createdAt": "2026-07-08T23:12:18.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-1890-contenido-473-ml",
-      "name": "1890",
-      "description": "Contenido: 473 ml",
-      "price": 3700.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas-con-alcohol",
-      "extras": [],
-      "image": "",
-      "createdAt": "2026-04-29T20:17:35.015966Z"
-    },
-    {
-      "id": "prod-coca-cola-contenido-15l",
+      "id": "prod-coca-cola",
       "name": "Coca Cola",
-      "description": "Contenido: 1.5L",
-      "price": 5500.0,
-      "productMode": "single",
-      "variants": [],
+      "description": "Gaseosas Coca Cola.",
+      "price": 2500,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-coca-cola-lata-354ml",
+          "name": "Lata 354ml",
+          "price": 2500
+        },
+        {
+          "id": "var-coca-cola-botella-600ml",
+          "name": "Botella 600ml",
+          "price": 3500
+        },
+        {
+          "id": "var-coca-cola-botella-15l",
+          "name": "Botella 1.5L",
+          "price": 6000
+        },
+        {
+          "id": "var-coca-cola-botella-225l",
+          "name": "Botella 2.25L",
+          "price": 7500
+        },
+        {
+          "id": "var-coca-cola-botella-3l",
+          "name": "Botella 3L",
+          "price": 8000
+        }
+      ],
       "categoryId": "cat-bebidas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:37.015966Z"
+      "createdAt": "2026-07-08T23:12:19.000Z",
+      "hidden": false
     },
     {
-      "id": "prod-fanta-contenido-15l",
-      "name": "Fanta",
-      "description": "Contenido: 1.5L",
-      "price": 5500.0,
-      "productMode": "single",
-      "variants": [],
+      "id": "prod-porron-330ml",
+      "name": "Porrón 330ml",
+      "description": "Heineken / Corona / Miller.",
+      "price": 7000,
+      "productMode": "variants",
+      "variants": [
+        {
+          "id": "var-porron-heineken",
+          "name": "Heineken",
+          "price": 7000
+        },
+        {
+          "id": "var-porron-corona",
+          "name": "Corona",
+          "price": 7000
+        },
+        {
+          "id": "var-porron-miller",
+          "name": "Miller",
+          "price": 7000
+        }
+      ],
       "categoryId": "cat-bebidas",
       "extras": [],
       "image": "",
-      "createdAt": "2026-04-29T20:17:38.015966Z"
-    },
-    {
-      "id": "prod-sprite-contenido-15l",
-      "name": "Sprite",
-      "description": "Contenido: 1.5L",
-      "price": 5500.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas",
-      "extras": [],
-      "image": "",
-      "createdAt": "2026-04-29T20:17:39.015966Z"
-    },
-    {
-      "id": "prod-coca-cola-lata",
-      "name": "Coca Cola",
-      "description": "Lata",
-      "price": 2000.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas",
-      "extras": [],
-      "image": "",
-      "createdAt": "2026-04-29T20:17:40.015966Z"
-    },
-    {
-      "id": "prod-sprite-lata",
-      "name": "Sprite",
-      "description": "Lata",
-      "price": 2000.0,
-      "productMode": "single",
-      "variants": [],
-      "categoryId": "cat-bebidas",
-      "extras": [],
-      "image": "",
-      "createdAt": "2026-04-29T20:17:41.015966Z"
+      "createdAt": "2026-07-08T23:12:20.000Z",
+      "hidden": false
     }
   ]
 }

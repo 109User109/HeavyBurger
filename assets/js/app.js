@@ -18,6 +18,7 @@ const DEFAULT_PRIMARY_COLOR = '#0B0B0D';
 const DEFAULT_SECONDARY_COLOR = '#C43A40';
 const PRODUCT_MODE_SINGLE = 'single';
 const PRODUCT_MODE_VARIANTS = 'variants';
+const PROMOTION_RECURRENCE_WEEKLY = 'weekly';
 
 const dom = {
   storeName: document.getElementById('store-name'),
@@ -380,6 +381,7 @@ function normalizeProductForCatalog(product = {}) {
     variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
     price: basePrice,
     extras: normalizeProductExtras(product.extras),
+    hidden: product.hidden === true,
     promotion: normalizePromotion(product.promotion, basePrice)
   };
 }
@@ -390,9 +392,17 @@ function normalizePromotion(rawPromotion, basePrice) {
   const type = String(rawPromotion.type || '').trim().toLowerCase();
   const startTimestamp = Date.parse(rawPromotion.startAt || rawPromotion.startDate || '');
   const endTimestamp = Date.parse(rawPromotion.endAt || rawPromotion.endDate || '');
+  const recurrence = rawPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY ? PROMOTION_RECURRENCE_WEEKLY : 'none';
+  const recurringDays = recurrence === PROMOTION_RECURRENCE_WEEKLY
+    ? normalizePromotionRecurringDays(rawPromotion.recurringDays)
+    : [];
+  const noEndDate =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY && (rawPromotion.noEndDate === true || new Date(endTimestamp).getFullYear() >= 9999);
+  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && rawPromotion.allDay === true;
 
   if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) return null;
   if (startTimestamp >= endTimestamp) return null;
+  if (recurrence === PROMOTION_RECURRENCE_WEEKLY && !recurringDays.length) return null;
 
   if (type === 'percentage') {
     const discountPercentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
@@ -402,7 +412,11 @@ function normalizePromotion(rawPromotion, basePrice) {
       type: 'percentage',
       discountPercentage: Number(discountPercentage.toFixed(2)),
       startAt: new Date(startTimestamp).toISOString(),
-      endAt: new Date(endTimestamp).toISOString()
+      endAt: new Date(endTimestamp).toISOString(),
+      recurrence,
+      recurringDays,
+      noEndDate,
+      allDay
     };
   }
 
@@ -415,11 +429,47 @@ function normalizePromotion(rawPromotion, basePrice) {
       type: 'fixed_price',
       promotionalPrice: Number(promotionalPrice.toFixed(2)),
       startAt: new Date(startTimestamp).toISOString(),
-      endAt: new Date(endTimestamp).toISOString()
+      endAt: new Date(endTimestamp).toISOString(),
+      recurrence,
+      recurringDays,
+      noEndDate,
+      allDay
     };
   }
 
   return null;
+}
+
+function normalizePromotionRecurringDays(rawDays) {
+  if (!Array.isArray(rawDays)) return [];
+
+  return [...new Set(rawDays.map((day) => Number(day)).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
+    .sort((a, b) => a - b);
+}
+
+function isWeeklyPromotionActive(promotion, nowMs = Date.now()) {
+  const days = normalizePromotionRecurringDays(promotion.recurringDays);
+  if (!days.length) return false;
+
+  const startTs = Date.parse(promotion.startAt || '');
+  const endTs = Date.parse(promotion.endAt || '');
+  if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) return false;
+  if (nowMs < startTs || nowMs > endTs) return false;
+
+  const now = new Date(nowMs);
+  if (!days.includes(now.getDay())) return false;
+
+  const start = new Date(startTs);
+  const end = new Date(endTs);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const startMinutes = start.getHours() * 60 + start.getMinutes();
+  const endMinutes = end.getHours() * 60 + end.getMinutes();
+
+  if (startMinutes <= endMinutes) {
+    return nowMinutes >= startMinutes && nowMinutes <= endMinutes;
+  }
+
+  return nowMinutes >= startMinutes || nowMinutes <= endMinutes;
 }
 
 function formatPromotionBadge(discountPercentage) {
@@ -451,7 +501,10 @@ function getEffectivePricing(basePrice, promotion, nowMs = Date.now()) {
 
   const startTs = Date.parse(normalizedPromotion.startAt);
   const endTs = Date.parse(normalizedPromotion.endAt);
-  const isActive = nowMs >= startTs && nowMs <= endTs;
+  const isActive =
+    normalizedPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY
+      ? isWeeklyPromotionActive(normalizedPromotion, nowMs)
+      : nowMs >= startTs && nowMs <= endTs;
 
   if (!isActive) {
     return {
@@ -501,6 +554,8 @@ function resolveDefaultCategoryId(rawCategoryId) {
 
 function filteredProducts() {
   return state.store.products.filter((product) => {
+    if (product.hidden) return false;
+
     const inCategory =
       state.selectedCategoryId === 'all' || product.categoryId === state.selectedCategoryId;
 
