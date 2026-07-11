@@ -54,7 +54,20 @@
       "image": "/uploads/1783552506679-549372097.jpg",
       "createdAt": "2026-07-08T23:12:00.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-american",
@@ -79,7 +92,20 @@
       "image": "/uploads/1783552524924-784208457.jpg",
       "createdAt": "2026-07-08T23:12:01.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-cuarto-453gr",
@@ -104,7 +130,20 @@
       "image": "/uploads/1783552544363-374580950.jpg",
       "createdAt": "2026-07-08T23:12:02.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-canchera",
@@ -129,7 +168,20 @@
       "image": "/uploads/1783552556457-171728309.jpg",
       "createdAt": "2026-07-08T23:12:03.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-bacon",
@@ -154,7 +206,20 @@
       "image": "/uploads/1783552576474-761897902.jpg",
       "createdAt": "2026-07-08T23:12:04.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-crispy",
@@ -179,7 +244,20 @@
       "image": "/uploads/1783552592719-64022371.jpg",
       "createdAt": "2026-07-08T23:12:05.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-urban",
@@ -204,7 +282,20 @@
       "image": "/uploads/1783552605956-371969399.jpg",
       "createdAt": "2026-07-08T23:12:06.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-heavy-melt",
@@ -229,7 +320,20 @@
       "image": "/uploads/1783552619019-912482515.jpg",
       "createdAt": "2026-07-08T23:12:07.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-4-quesos",
@@ -254,7 +358,20 @@
       "image": "/uploads/1783552633179-373936619.jpg",
       "createdAt": "2026-07-08T23:12:08.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-big-heavy",
@@ -268,7 +385,20 @@
       "image": "/uploads/1783552647940-944678571.jpg",
       "createdAt": "2026-07-08T23:12:09.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-ankara-messi",
@@ -282,7 +412,20 @@
       "image": "/uploads/1783552659340-745718179.jpg",
       "createdAt": "2026-07-08T23:12:10.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-clasicas",
@@ -312,7 +455,20 @@
       "image": "",
       "createdAt": "2026-07-08T23:12:11.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-a-caballo",
@@ -342,7 +498,20 @@
       "image": "",
       "createdAt": "2026-07-08T23:12:12.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-cheddar",
@@ -372,7 +541,20 @@
       "image": "",
       "createdAt": "2026-07-08T23:12:13.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-full-bacon",
@@ -402,7 +584,20 @@
       "image": "",
       "createdAt": "2026-07-08T23:12:14.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-heavy",
@@ -432,7 +627,20 @@
       "image": "",
       "createdAt": "2026-07-08T23:12:15.000Z",
       "hidden": false,
-      "allowComments": true
+      "allowComments": true,
+      "promotion": {
+        "type": "percentage",
+        "discountPercentage": 20,
+        "startAt": "2026-07-11T03:00:00.000Z",
+        "endAt": "+010000-01-01T02:59:00.000Z",
+        "recurrence": "weekly",
+        "recurringDays": [
+          0,
+          6
+        ],
+        "noEndDate": true,
+        "allDay": true
+      }
     },
     {
       "id": "prod-palitos",
