@@ -1,5 +1,6 @@
 ﻿const express = require('express');
 const fs = require('fs/promises');
+const fsSync = require('fs');
 const path = require('path');
 const multer = require('multer');
 const crypto = require('crypto');
@@ -11,6 +12,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const ROOT_DIR = __dirname;
+if (process.env.NODE_ENV !== 'production') {
+  loadLocalEnvFile(path.join(ROOT_DIR, '.env.local'));
+}
+
 const PERSISTENT_STORAGE_PATH = sanitizeText(
   process.env.PERSISTENT_STORAGE_PATH || process.env.RENDER_DISK_MOUNT_PATH,
   ''
@@ -33,7 +38,10 @@ const ALLOWED_PRODUCT_MODES = new Set([PRODUCT_MODE_SINGLE, PRODUCT_MODE_VARIANT
 const DEFAULT_PRIMARY_COLOR = '#0B0B0D';
 const DEFAULT_SECONDARY_COLOR = '#C43A40';
 const ADMIN_USERNAME = sanitizeText(process.env.ADMIN_USERNAME, 'admin') || 'admin';
-const ADMIN_PASSWORD = sanitizeText(process.env.ADMIN_PASSWORD, '') || 'Heavy-CREDPQWSTR';
+const ADMIN_PASSWORD = sanitizeText(process.env.ADMIN_PASSWORD, '');
+if (!ADMIN_PASSWORD) {
+  throw new Error('ADMIN_PASSWORD environment variable is required.');
+}
 const ADMIN_SESSION_COOKIE = 'admin_session';
 const ADMIN_COOKIE_SECURE =
   sanitizeText(process.env.ADMIN_COOKIE_SECURE, process.env.NODE_ENV === 'production' ? 'true' : 'false')
@@ -88,6 +96,25 @@ const upload = multer({
 function sanitizeText(value, fallback = '') {
   if (typeof value !== 'string') return fallback;
   return value.trim();
+}
+
+function loadLocalEnvFile(filePath) {
+  if (!fsSync.existsSync(filePath)) return;
+
+  const content = fsSync.readFileSync(filePath, 'utf8');
+  for (const line of content.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const separatorIndex = trimmed.indexOf('=');
+    if (separatorIndex <= 0) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const rawValue = trimmed.slice(separatorIndex + 1).trim();
+    if (!key || process.env[key] !== undefined) continue;
+
+    process.env[key] = rawValue.replace(/^['"]|['"]$/g, '');
+  }
 }
 
 function sanitizePrice(value) {
@@ -1457,10 +1484,6 @@ app.use((error, _, res, __) => {
 
 async function startServer() {
   await ensureStorageBootstrap();
-
-  if (process.env.NODE_ENV === 'production' && ADMIN_PASSWORD === 'Heavy-CREDPQWSTR') {
-    console.warn('WARNING: ADMIN_PASSWORD is using the default value in production.');
-  }
 
   await cleanupExpiredPromotionsInStoreFile();
   setInterval(cleanupExpiredPromotionsInStoreFile, PROMOTION_CLEANUP_INTERVAL_MS);
