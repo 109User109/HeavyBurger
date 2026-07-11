@@ -653,6 +653,7 @@ function renderProducts() {
           : 'Producto unico';
       const visibilityLabel = isHidden ? 'Oculto' : 'Visible';
       const visibilityTitle = isHidden ? 'Mostrar producto' : 'Ocultar producto';
+      const commentsLabel = product.allowComments === false ? 'Comentarios: no' : 'Comentarios: si';
 
       return `
       <article class="product-item ${isHidden ? 'is-hidden' : ''}" data-product-id="${product.id}">
@@ -670,6 +671,7 @@ function renderProducts() {
             <span>Publicado: ${escapeHtml(formatDate(product.createdAt))}</span>
             <span>Tipo: ${escapeHtml(productModeLabel)}</span>
             <span>Extras configurados: ${normalizeProductExtras(product.extras).length}</span>
+            <span>${escapeHtml(commentsLabel)}</span>
             <span class="product-status-chip ${isHidden ? 'is-hidden' : 'is-visible'}">${visibilityLabel}</span>
             <span>${escapeHtml(product.description || 'Sin descripcion')}</span>
           </div>
@@ -785,7 +787,8 @@ function normalizeProductForAdmin(product = {}) {
     variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
     price: basePrice,
     extras: normalizeProductExtras(product.extras),
-    hidden: product.hidden === true
+    hidden: product.hidden === true,
+    allowComments: product.allowComments !== false
   };
 }
 
@@ -1842,6 +1845,7 @@ async function onSaveProduct(event) {
   const description = form.elements.description.value.trim();
   const categoryId = form.elements.categoryId.value;
   const removeImage = form.elements.removeImage.checked;
+  const allowComments = form.elements.allowComments.checked;
   const productMode = getSelectedProductMode();
 
   const variantsResult = collectProductVariantsFromEditor({
@@ -1889,6 +1893,7 @@ async function onSaveProduct(event) {
   formData.append('extras', JSON.stringify(extrasResult.extras));
   formData.append('promotion', promotionResult.promotion ? JSON.stringify(promotionResult.promotion) : '');
   formData.append('removeImage', removeImage ? 'true' : 'false');
+  formData.append('allowComments', allowComments ? 'true' : 'false');
 
   if (!removeImage && shouldUploadEditedImage()) {
     const editedFile = await buildEditedImageFile();
@@ -2001,6 +2006,7 @@ async function loadProductIntoForm(productId) {
   form.elements.description.value = product.description || '';
   form.elements.price.value = product.price;
   form.elements.categoryId.value = product.categoryId;
+  form.elements.allowComments.checked = product.allowComments !== false;
   renderProductVariantsEditor(normalizeProductVariants(product.variants));
   setSelectedProductMode(product.productMode);
   setProductModeUI(product.productMode);
@@ -2029,6 +2035,7 @@ function resetProductForm() {
 
   dom.productForm.reset();
   dom.productForm.elements.productId.value = '';
+  dom.productForm.elements.allowComments.checked = true;
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
   dom.promotionEnabled.checked = false;

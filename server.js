@@ -257,7 +257,8 @@ function normalizeProductForStore(rawProduct = {}, nowMs = Date.now()) {
     variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
     extras: normalizeProductExtras(product.extras),
     price: safePrice,
-    hidden: product.hidden === true
+    hidden: product.hidden === true,
+    allowComments: product.allowComments !== false
   };
 
   if (normalizedPromotion) {
@@ -1193,6 +1194,7 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       productMode === PRODUCT_MODE_VARIANTS ? Number(variants?.[0]?.price) : sanitizePrice(req.body.price);
     const extras = parseExtrasPayload(req.body.extras);
     const promotionResult = parsePromotionPayload(req.body.promotion, Number(price));
+    const allowComments = String(req.body.allowComments ?? 'true') === 'true';
 
     if (parsedVariants === null) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
@@ -1242,6 +1244,7 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       extras,
       image: req.file ? `/uploads/${req.file.filename}` : '',
       hidden: false,
+      allowComments,
       createdAt: new Date().toISOString()
     };
 
@@ -1305,6 +1308,10 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
         ? parsePromotionPayload(req.body.promotion, Number(price))
         : { ok: true, promotion: normalizeStoredPromotion(product.promotion, Number(price)) };
     const removeImage = String(req.body.removeImage || 'false') === 'true';
+    const allowComments =
+      req.body.allowComments !== undefined
+        ? String(req.body.allowComments) === 'true'
+        : product.allowComments !== false;
 
     if (parsedVariants === null) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
@@ -1352,6 +1359,7 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
     product.variants = productMode === PRODUCT_MODE_VARIANTS ? variants : [];
     product.categoryId = categoryId;
     product.extras = extras;
+    product.allowComments = allowComments;
     if (promotionResult.promotion) {
       product.promotion = promotionResult.promotion;
     } else {

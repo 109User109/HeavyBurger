@@ -10,7 +10,8 @@
     productId: '',
     productMode: 'single',
     variants: [],
-    extras: []
+    extras: [],
+    allowComments: true
   }
 };
 
@@ -51,6 +52,7 @@ const dom = {
   configVariantsList: document.getElementById('config-variants-list'),
   configExtrasSection: document.getElementById('config-extras-section'),
   configExtrasList: document.getElementById('config-extras-list'),
+  configNoteField: document.getElementById('config-note-field'),
   configNote: document.getElementById('config-note'),
   configQuantity: document.getElementById('config-quantity'),
   configQtyDecrease: document.getElementById('config-qty-decrease'),
@@ -382,6 +384,7 @@ function normalizeProductForCatalog(product = {}) {
     price: basePrice,
     extras: normalizeProductExtras(product.extras),
     hidden: product.hidden === true,
+    allowComments: product.allowComments !== false,
     promotion: normalizePromotion(product.promotion, basePrice)
   };
 }
@@ -663,9 +666,12 @@ function openProductConfigurator(productId) {
   state.configurator.productMode = productMode;
   state.configurator.variants = productMode === PRODUCT_MODE_VARIANTS ? variants : [];
   state.configurator.extras = normalizeProductExtras(product.extras);
+  state.configurator.allowComments = product.allowComments !== false;
 
   dom.configProductName.textContent = product.name;
   dom.configNote.value = '';
+  dom.configNote.disabled = !state.configurator.allowComments;
+  dom.configNoteField.hidden = !state.configurator.allowComments;
   dom.configQuantity.value = '1';
 
   renderConfiguratorVariants();
@@ -679,6 +685,9 @@ function closeProductConfigurator() {
   state.configurator.productMode = PRODUCT_MODE_SINGLE;
   state.configurator.variants = [];
   state.configurator.extras = [];
+  state.configurator.allowComments = true;
+  dom.configNote.disabled = false;
+  dom.configNoteField.hidden = false;
   setProductConfiguratorOpen(false);
 }
 
@@ -858,7 +867,7 @@ function onSubmitProductConfigurator(event) {
 
   const quantity = readConfiguratorQuantity();
   const selectedExtras = getSelectedConfiguratorExtras();
-  const note = String(dom.configNote.value || '').trim();
+  const note = product.allowComments !== false ? String(dom.configNote.value || '').trim() : '';
 
   addConfiguredProductToCart({
     product,

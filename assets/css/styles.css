@@ -997,6 +997,8 @@ body.cart-open .cart-drawer {
   grid-template-columns: auto 90px auto;
   gap: 0.35rem;
   align-items: center;
+  justify-self: center;
+  width: max-content;
 }
 
 .config-qty-controls .qty-btn {
@@ -1220,6 +1222,8 @@ body.cart-open .cart-drawer {
 
   .config-qty-controls {
     grid-template-columns: auto 1fr auto;
+    justify-self: stretch;
+    width: 100%;
   }
 }
 
