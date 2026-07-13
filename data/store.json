@@ -52,8 +52,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -151,8 +166,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -250,8 +280,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -349,8 +394,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -448,8 +508,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -547,8 +622,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -646,8 +736,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -745,8 +850,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -844,8 +964,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -932,8 +1067,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
@@ -1020,8 +1170,23 @@
       "categoryId": "cat-burgers",
       "extras": [
         {
-          "id": "extra-carne-cheddar-tybo-muzza-provoleta",
-          "name": "Carne + Cheddar + Tybo + Muzza + Provoleta",
+          "id": "extra-carne-con-cheddar",
+          "name": "Carne con Cheddar",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-tybo",
+          "name": "Carne con Tybo",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-muzza",
+          "name": "Carne con Muzza",
+          "price": 3500
+        },
+        {
+          "id": "extra-carne-con-provoleta",
+          "name": "Carne con Provoleta",
           "price": 3500
         },
         {
