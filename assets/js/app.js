@@ -20,6 +20,8 @@ const DEFAULT_SECONDARY_COLOR = '#C43A40';
 const PRODUCT_MODE_SINGLE = 'single';
 const PRODUCT_MODE_VARIANTS = 'variants';
 const PROMOTION_RECURRENCE_WEEKLY = 'weekly';
+const CONFIG_DISCLOSURE_ANIMATION_MS = 220;
+const configDisclosureAnimations = new WeakMap();
 
 const dom = {
   storeName: document.getElementById('store-name'),
@@ -114,6 +116,9 @@ function bindEvents() {
   dom.productConfigBackdrop.addEventListener('click', closeProductConfigurator);
   dom.closeProductConfigBtn.addEventListener('click', closeProductConfigurator);
   dom.productConfigForm.addEventListener('submit', onSubmitProductConfigurator);
+  for (const disclosure of [dom.configVariantsSection, dom.configExtrasSection]) {
+    disclosure.querySelector('summary')?.addEventListener('click', onConfigDisclosureSummaryClick);
+  }
   dom.configVariantsList.addEventListener('change', updateProductConfiguratorTotal);
   dom.configExtrasList.addEventListener('change', updateProductConfiguratorTotal);
   dom.configQuantity.addEventListener('input', () => {
@@ -396,12 +401,16 @@ function normalizePromotion(rawPromotion, basePrice) {
   const startTimestamp = Date.parse(rawPromotion.startAt || rawPromotion.startDate || '');
   const endTimestamp = Date.parse(rawPromotion.endAt || rawPromotion.endDate || '');
   const recurrence = rawPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY ? PROMOTION_RECURRENCE_WEEKLY : 'none';
+  const weeklyWindows =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY ? normalizePromotionWeeklyWindows(rawPromotion.weeklyWindows) : [];
   const recurringDays = recurrence === PROMOTION_RECURRENCE_WEEKLY
-    ? normalizePromotionRecurringDays(rawPromotion.recurringDays)
+    ? weeklyWindows.length
+      ? getWeeklyWindowRecurringDays(weeklyWindows)
+      : normalizePromotionRecurringDays(rawPromotion.recurringDays)
     : [];
   const noEndDate =
     recurrence === PROMOTION_RECURRENCE_WEEKLY && (rawPromotion.noEndDate === true || new Date(endTimestamp).getFullYear() >= 9999);
-  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && rawPromotion.allDay === true;
+  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && rawPromotion.allDay === true && !weeklyWindows.length;
 
   if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) return null;
   if (startTimestamp >= endTimestamp) return null;
@@ -418,6 +427,7 @@ function normalizePromotion(rawPromotion, basePrice) {
       endAt: new Date(endTimestamp).toISOString(),
       recurrence,
       recurringDays,
+      weeklyWindows,
       noEndDate,
       allDay
     };
@@ -435,6 +445,7 @@ function normalizePromotion(rawPromotion, basePrice) {
       endAt: new Date(endTimestamp).toISOString(),
       recurrence,
       recurringDays,
+      weeklyWindows,
       noEndDate,
       allDay
     };
@@ -450,14 +461,87 @@ function normalizePromotionRecurringDays(rawDays) {
     .sort((a, b) => a - b);
 }
 
-function isWeeklyPromotionActive(promotion, nowMs = Date.now()) {
-  const days = normalizePromotionRecurringDays(promotion.recurringDays);
-  if (!days.length) return false;
+function normalizeTimeString(value, fallback = '') {
+  const candidate = String(value || fallback).trim();
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(candidate) ? candidate : fallback;
+}
 
+function timeStringToMinutes(value) {
+  const time = normalizeTimeString(value);
+  if (!time) return null;
+
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function normalizePromotionWeeklyWindows(rawWindows) {
+  if (!Array.isArray(rawWindows)) return [];
+
+  const normalized = [];
+
+  rawWindows.forEach((rawWindow, index) => {
+    if (!rawWindow || typeof rawWindow !== 'object') return;
+
+    const days = normalizePromotionRecurringDays(rawWindow.days);
+    const startTime = normalizeTimeString(rawWindow.startTime);
+    const endTime = normalizeTimeString(rawWindow.endTime);
+    const endDayOffset = Number(rawWindow.endDayOffset) === 1 ? 1 : 0;
+    const startMinutes = timeStringToMinutes(startTime);
+    const endMinutes = timeStringToMinutes(endTime);
+
+    if (!days.length || !startTime || !endTime || startMinutes === null || endMinutes === null) return;
+    if (endDayOffset === 0 && endMinutes <= startMinutes) return;
+
+    normalized.push({
+      id: String(rawWindow.id || `window-${index + 1}`).trim() || `window-${index + 1}`,
+      days,
+      startTime,
+      endTime,
+      endDayOffset
+    });
+  });
+
+  return normalized;
+}
+
+function getWeeklyWindowRecurringDays(weeklyWindows) {
+  return normalizePromotionRecurringDays(weeklyWindows.flatMap((window) => window.days || []));
+}
+
+function isWeeklyWindowActive(weeklyWindow, nowMs) {
+  const now = new Date(nowMs);
+  const currentDay = now.getDay();
+  const [startHour, startMinute] = weeklyWindow.startTime.split(':').map(Number);
+  const [endHour, endMinute] = weeklyWindow.endTime.split(':').map(Number);
+
+  for (const day of weeklyWindow.days) {
+    const start = new Date(nowMs);
+    start.setHours(startHour, startMinute, 0, 0);
+    start.setDate(start.getDate() + (day - currentDay));
+
+    const end = new Date(start.getTime());
+    end.setDate(end.getDate() + weeklyWindow.endDayOffset);
+    end.setHours(endHour, endMinute, 59, 999);
+
+    if (now >= start && now <= end) return true;
+  }
+
+  return false;
+}
+
+function isWeeklyPromotionActive(promotion, nowMs = Date.now()) {
   const startTs = Date.parse(promotion.startAt || '');
   const endTs = Date.parse(promotion.endAt || '');
   if (!Number.isFinite(startTs) || !Number.isFinite(endTs)) return false;
   if (nowMs < startTs || nowMs > endTs) return false;
+
+  const weeklyWindows = normalizePromotionWeeklyWindows(promotion.weeklyWindows);
+  if (weeklyWindows.length) {
+    return weeklyWindows.some((weeklyWindow) => isWeeklyWindowActive(weeklyWindow, nowMs));
+  }
+
+  const days = normalizePromotionRecurringDays(promotion.recurringDays);
+  if (!days.length) return false;
 
   const now = new Date(nowMs);
   if (!days.includes(now.getDay())) return false;
@@ -691,15 +775,82 @@ function closeProductConfigurator() {
   setProductConfiguratorOpen(false);
 }
 
+function onConfigDisclosureSummaryClick(event) {
+  const summary = event.target.closest('.config-disclosure > summary');
+  if (!summary) return;
+
+  const disclosure = summary.parentElement;
+  if (!disclosure) return;
+
+  event.preventDefault();
+  animateConfigDisclosure(disclosure, !disclosure.open);
+}
+
+function animateConfigDisclosure(disclosure, shouldOpen) {
+  const summary = disclosure?.querySelector('summary');
+  const panel = disclosure?.querySelector('.config-disclosure-panel');
+
+  if (!disclosure || !summary || !panel || disclosure.hidden) return;
+
+  const currentAnimation = configDisclosureAnimations.get(disclosure);
+  if (!currentAnimation && disclosure.open === shouldOpen) return;
+  if (currentAnimation) currentAnimation.cancel();
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefersReducedMotion) {
+    disclosure.open = shouldOpen;
+    disclosure.style.height = '';
+    disclosure.style.overflow = '';
+    disclosure.classList.remove('is-animating');
+    return;
+  }
+
+  const startHeight = disclosure.open ? disclosure.offsetHeight : summary.offsetHeight;
+  if (shouldOpen) disclosure.open = true;
+
+  const endHeight = shouldOpen ? summary.offsetHeight + panel.scrollHeight : summary.offsetHeight;
+  disclosure.style.height = `${startHeight}px`;
+  disclosure.style.overflow = 'hidden';
+  disclosure.classList.add('is-animating');
+
+  const animation = disclosure.animate(
+    [{ height: `${startHeight}px` }, { height: `${endHeight}px` }],
+    {
+      duration: CONFIG_DISCLOSURE_ANIMATION_MS,
+      easing: 'cubic-bezier(0.2, 0.75, 0.2, 1)'
+    }
+  );
+
+  configDisclosureAnimations.set(disclosure, animation);
+
+  animation.onfinish = () => {
+    disclosure.open = shouldOpen;
+    disclosure.style.height = '';
+    disclosure.style.overflow = '';
+    disclosure.classList.remove('is-animating');
+    configDisclosureAnimations.delete(disclosure);
+  };
+
+  animation.oncancel = () => {
+    if (configDisclosureAnimations.get(disclosure) !== animation) return;
+    disclosure.style.height = '';
+    disclosure.style.overflow = '';
+    disclosure.classList.remove('is-animating');
+    configDisclosureAnimations.delete(disclosure);
+  };
+}
+
 function renderConfiguratorVariants() {
   dom.configVariantsList.innerHTML = '';
 
   if (state.configurator.productMode !== PRODUCT_MODE_VARIANTS || !state.configurator.variants.length) {
     dom.configVariantsSection.hidden = true;
+    dom.configVariantsSection.open = false;
     return;
   }
 
   dom.configVariantsSection.hidden = false;
+  dom.configVariantsSection.open = true;
   const product = getProductById(state.configurator.productId);
   const fragment = document.createDocumentFragment();
 
@@ -722,10 +873,23 @@ function renderConfiguratorVariants() {
     const nameLine = document.createElement('span');
     nameLine.textContent = variant.name;
 
-    const priceLine = document.createElement('small');
-    priceLine.textContent = variantPricing.hasPromotion
-      ? `${formatMoney(variantPricing.finalPrice)} (antes ${formatMoney(variantPricing.originalPrice)})`
-      : `${formatMoney(variantPricing.finalPrice)}`;
+    const priceLine = document.createElement('span');
+    priceLine.className = 'config-option-price';
+
+    if (variantPricing.hasPromotion) {
+      const oldPrice = document.createElement('span');
+      oldPrice.className = 'price-old';
+      oldPrice.textContent = formatMoney(variantPricing.originalPrice);
+
+      const currentPrice = document.createElement('strong');
+      currentPrice.className = 'price-current';
+      currentPrice.textContent = formatMoney(variantPricing.finalPrice);
+
+      priceLine.appendChild(currentPrice);
+      priceLine.appendChild(oldPrice);
+    } else {
+      priceLine.textContent = formatMoney(variantPricing.finalPrice);
+    }
 
     textWrap.appendChild(nameLine);
     textWrap.appendChild(priceLine);
@@ -743,10 +907,12 @@ function renderConfiguratorExtras() {
 
   if (!state.configurator.extras.length) {
     dom.configExtrasSection.hidden = true;
+    dom.configExtrasSection.open = false;
     return;
   }
 
   dom.configExtrasSection.hidden = false;
+  dom.configExtrasSection.open = false;
   const fragment = document.createDocumentFragment();
 
   for (let index = 0; index < state.configurator.extras.length; index += 1) {

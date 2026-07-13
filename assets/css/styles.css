@@ -923,8 +923,75 @@ body.cart-open .cart-drawer {
   gap: 0.45rem;
 }
 
-.config-section h4 {
+.config-section h4,
+.config-disclosure summary {
   font-size: 0.96rem;
+}
+
+.config-disclosure {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  gap: 0;
+  overflow: hidden;
+}
+
+.config-disclosure.is-animating {
+  will-change: height;
+}
+
+.config-disclosure summary {
+  align-items: center;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font-weight: 800;
+  justify-content: space-between;
+  list-style: none;
+  padding: 0.68rem 0.75rem;
+  transition: background 180ms ease;
+  user-select: none;
+}
+
+.config-disclosure summary:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.config-disclosure summary:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: -2px;
+}
+
+.config-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.config-disclosure-icon {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  color: var(--muted);
+  flex: 0 0 auto;
+  height: 0.48rem;
+  margin-left: 0.75rem;
+  transform: rotate(45deg);
+  transition: transform 220ms cubic-bezier(0.2, 0.75, 0.2, 1), color 180ms ease;
+  width: 0.48rem;
+}
+
+.config-disclosure[open] .config-disclosure-icon {
+  transform: rotate(225deg);
+}
+
+.config-disclosure summary:hover .config-disclosure-icon {
+  color: var(--text);
+}
+
+.config-disclosure-panel {
+  overflow: hidden;
+}
+
+.config-disclosure .config-extras-list {
+  padding: 0 0.55rem 0.55rem;
 }
 
 .config-extras-list {
@@ -966,6 +1033,28 @@ body.cart-open .cart-drawer {
   color: var(--muted);
   font-size: 0.79rem;
   display: block;
+}
+
+.config-variant-option .config-option-price {
+  align-items: baseline;
+  color: var(--muted);
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.79rem;
+}
+
+.config-variant-option .config-option-price .price-old {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-decoration: line-through;
+}
+
+.config-variant-option .config-option-price .price-current {
+  color: var(--accent);
+  font-size: 0.83rem;
+  font-weight: 800;
 }
 
 .config-note-field,

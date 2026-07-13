@@ -152,15 +152,25 @@
         </header>
 
         <form id="product-config-form" class="product-config-form">
-          <section id="config-variants-section" class="config-section" hidden>
-            <h4>Elegí tu tipo</h4>
-            <div id="config-variants-list" class="config-extras-list"></div>
-          </section>
+          <details id="config-variants-section" class="config-section config-disclosure" hidden open>
+            <summary>
+              <span>Elegí tu tipo</span>
+              <span class="config-disclosure-icon" aria-hidden="true"></span>
+            </summary>
+            <div class="config-disclosure-panel">
+              <div id="config-variants-list" class="config-extras-list"></div>
+            </div>
+          </details>
 
-          <section id="config-extras-section" class="config-section">
-            <h4>Extras</h4>
-            <div id="config-extras-list" class="config-extras-list"></div>
-          </section>
+          <details id="config-extras-section" class="config-section config-disclosure" hidden>
+            <summary>
+              <span>Extras</span>
+              <span class="config-disclosure-icon" aria-hidden="true"></span>
+            </summary>
+            <div class="config-disclosure-panel">
+              <div id="config-extras-list" class="config-extras-list"></div>
+            </div>
+          </details>
 
           <label id="config-note-field" class="config-note-field">
             Comentarios para este producto

@@ -384,26 +384,11 @@
             </select>
           </label>
 
-          <fieldset id="promotion-weekly-days-wrap" class="promotion-weekly-days" hidden>
-            <legend>Dias de repeticion</legend>
-            <label><input type="checkbox" value="1" data-promotion-weekday /> Lun</label>
-            <label><input type="checkbox" value="2" data-promotion-weekday /> Mar</label>
-            <label><input type="checkbox" value="3" data-promotion-weekday /> Mie</label>
-            <label><input type="checkbox" value="4" data-promotion-weekday /> Jue</label>
-            <label><input type="checkbox" value="5" data-promotion-weekday /> Vie</label>
-            <label><input type="checkbox" value="6" data-promotion-weekday /> Sab</label>
-            <label><input type="checkbox" value="0" data-promotion-weekday /> Dom</label>
-          </fieldset>
-
           <fieldset id="promotion-weekly-schedule-wrap" class="promotion-weekly-schedule" hidden>
-            <legend>Vigencia y horario semanal</legend>
+            <legend>Vigencia semanal</legend>
             <label class="checkbox-row promotion-schedule-toggle">
               <input id="promotion-weekly-no-end" type="checkbox" />
               Sin fecha de fin
-            </label>
-            <label class="checkbox-row promotion-schedule-toggle">
-              <input id="promotion-weekly-all-day" type="checkbox" />
-              Todo el dia
             </label>
             <label>
               Vigente desde
@@ -413,14 +398,13 @@
               Vigente hasta
               <input id="promotion-weekly-end-date" type="date" />
             </label>
-            <label>
-              Horario desde
-              <input id="promotion-weekly-start-time" type="time" />
-            </label>
-            <label>
-              Horario hasta
-              <input id="promotion-weekly-end-time" type="time" />
-            </label>
+            <div class="promotion-weekly-windows">
+              <div class="promotion-subhead">
+                <h4>Horarios semanales</h4>
+                <button id="add-weekly-window-btn" type="button" class="outline-btn">Agregar horario</button>
+              </div>
+              <div id="promotion-weekly-windows-list" class="weekly-windows-list"></div>
+            </div>
           </fieldset>
 
           <div class="actions">

@@ -314,6 +314,53 @@ function normalizePromotionRecurringDays(rawDays) {
     .sort((a, b) => a - b);
 }
 
+function normalizeTimeString(value, fallback = '') {
+  const candidate = sanitizeText(value, fallback);
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(candidate) ? candidate : fallback;
+}
+
+function timeStringToMinutes(value) {
+  const time = normalizeTimeString(value);
+  if (!time) return null;
+
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function normalizePromotionWeeklyWindows(rawWindows) {
+  if (!Array.isArray(rawWindows)) return [];
+
+  const normalized = [];
+
+  for (const [index, rawWindow] of rawWindows.entries()) {
+    if (!rawWindow || typeof rawWindow !== 'object') continue;
+
+    const days = normalizePromotionRecurringDays(rawWindow.days);
+    const startTime = normalizeTimeString(rawWindow.startTime);
+    const endTime = normalizeTimeString(rawWindow.endTime);
+    const endDayOffset = Number(rawWindow.endDayOffset) === 1 ? 1 : 0;
+    const startMinutes = timeStringToMinutes(startTime);
+    const endMinutes = timeStringToMinutes(endTime);
+
+    if (!days.length || !startTime || !endTime || startMinutes === null || endMinutes === null) continue;
+    if (endDayOffset === 0 && endMinutes <= startMinutes) continue;
+
+    normalized.push({
+      id: sanitizeText(rawWindow.id, `window-${index + 1}`) || `window-${index + 1}`,
+      days,
+      startTime,
+      endTime,
+      endDayOffset
+    });
+  }
+
+  return normalized;
+}
+
+function getWeeklyWindowRecurringDays(weeklyWindows) {
+  return normalizePromotionRecurringDays(weeklyWindows.flatMap((window) => window.days || []));
+}
+
 function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
   if (!rawPromotion || typeof rawPromotion !== 'object') return null;
 
@@ -322,12 +369,18 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
   const recurrence = ALLOWED_PROMOTION_RECURRENCES.has(sanitizeText(rawPromotion.recurrence, PROMOTION_RECURRENCE_NONE))
     ? sanitizeText(rawPromotion.recurrence, PROMOTION_RECURRENCE_NONE)
     : PROMOTION_RECURRENCE_NONE;
+  const weeklyWindows =
+    recurrence === PROMOTION_RECURRENCE_WEEKLY ? normalizePromotionWeeklyWindows(rawPromotion.weeklyWindows) : [];
   const recurringDays =
-    recurrence === PROMOTION_RECURRENCE_WEEKLY ? normalizePromotionRecurringDays(rawPromotion.recurringDays) : [];
+    recurrence === PROMOTION_RECURRENCE_WEEKLY
+      ? weeklyWindows.length
+        ? getWeeklyWindowRecurringDays(weeklyWindows)
+        : normalizePromotionRecurringDays(rawPromotion.recurringDays)
+      : [];
   const noEndDate =
     recurrence === PROMOTION_RECURRENCE_WEEKLY &&
     (rawPromotion.noEndDate === true || new Date(Date.parse(rawPromotion.endAt || rawPromotion.endDate || '')).getFullYear() >= 9999);
-  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && rawPromotion.allDay === true;
+  const allDay = recurrence === PROMOTION_RECURRENCE_WEEKLY && rawPromotion.allDay === true && !weeklyWindows.length;
 
   const startAt = parsePromotionDate(rawPromotion.startAt || rawPromotion.startDate);
   const endAt = parsePromotionDate(rawPromotion.endAt || rawPromotion.endDate);
@@ -360,6 +413,7 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
       endAt,
       recurrence,
       recurringDays,
+      weeklyWindows,
       noEndDate,
       allDay
     };
@@ -376,6 +430,7 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
     endAt,
     recurrence,
     recurringDays,
+    weeklyWindows,
     noEndDate,
     allDay
   };
