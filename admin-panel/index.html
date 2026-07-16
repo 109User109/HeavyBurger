@@ -190,12 +190,25 @@
           <section class="full promotion-editor">
             <label class="checkbox-row">
               <input id="promotion-enabled" type="checkbox" name="promotionEnabled" />
-              Activar promocion
+              Activar promocion general
             </label>
             <div class="promotion-row">
               <p id="promotion-summary" class="muted">Sin promocion configurada.</p>
               <button id="configure-promotion-btn" type="button" class="outline-btn" disabled>
-                Configurar promocion
+                Configurar promo general
+              </button>
+            </div>
+          </section>
+
+          <section class="full promotion-editor" id="variant-promotion-editor" hidden>
+            <label class="checkbox-row">
+              <input id="variant-promotion-enabled" type="checkbox" name="variantPromotionEnabled" />
+              Activar promocion en variantes
+            </label>
+            <div class="promotion-row">
+              <p id="variant-promotion-summary" class="muted">Sin promocion de variantes configurada.</p>
+              <button id="configure-variant-promotion-btn" type="button" class="outline-btn" disabled>
+                Configurar promo por variantes
               </button>
             </div>
           </section>
@@ -365,6 +378,12 @@
             Precio promocional
             <input id="promotion-fixed-price" type="number" min="0" step="0.01" placeholder="Ej: 7999" />
           </label>
+
+          <fieldset id="promotion-variant-target-wrap" class="promotion-variant-target" hidden>
+            <legend>Variantes alcanzadas</legend>
+            <p class="muted">Selecciona exactamente las variantes que reciben esta promocion.</p>
+            <div id="promotion-variant-target-list" class="promotion-variant-target-list"></div>
+          </fieldset>
 
           <label id="promotion-start-wrap">
             <span id="promotion-start-label">Fecha de inicio de promo</span>

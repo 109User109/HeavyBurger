@@ -390,7 +390,8 @@ function normalizeProductForCatalog(product = {}) {
     extras: normalizeProductExtras(product.extras),
     hidden: product.hidden === true,
     allowComments: product.allowComments !== false,
-    promotion: normalizePromotion(product.promotion, basePrice)
+    promotion: normalizePromotion(product.promotion, basePrice),
+    variantPromotions: normalizeVariantPromotions(product.variantPromotions, variants)
   };
 }
 
@@ -398,6 +399,8 @@ function normalizePromotion(rawPromotion, basePrice) {
   if (!rawPromotion || typeof rawPromotion !== 'object') return null;
 
   const type = String(rawPromotion.type || '').trim().toLowerCase();
+  const target = rawPromotion.target === 'variants' ? 'variants' : 'product';
+  const variantIds = target === 'variants' ? normalizePromotionVariantIds(rawPromotion.variantIds) : [];
   const startTimestamp = Date.parse(rawPromotion.startAt || rawPromotion.startDate || '');
   const endTimestamp = Date.parse(rawPromotion.endAt || rawPromotion.endDate || '');
   const recurrence = rawPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY ? PROMOTION_RECURRENCE_WEEKLY : 'none';
@@ -415,6 +418,7 @@ function normalizePromotion(rawPromotion, basePrice) {
   if (!Number.isFinite(startTimestamp) || !Number.isFinite(endTimestamp)) return null;
   if (startTimestamp >= endTimestamp) return null;
   if (recurrence === PROMOTION_RECURRENCE_WEEKLY && !recurringDays.length) return null;
+  if (target === 'variants' && !variantIds.length) return null;
 
   if (type === 'percentage') {
     const discountPercentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
@@ -428,6 +432,8 @@ function normalizePromotion(rawPromotion, basePrice) {
       recurrence,
       recurringDays,
       weeklyWindows,
+      target,
+      variantIds,
       noEndDate,
       allDay
     };
@@ -446,6 +452,8 @@ function normalizePromotion(rawPromotion, basePrice) {
       recurrence,
       recurringDays,
       weeklyWindows,
+      target,
+      variantIds,
       noEndDate,
       allDay
     };
@@ -459,6 +467,45 @@ function normalizePromotionRecurringDays(rawDays) {
 
   return [...new Set(rawDays.map((day) => Number(day)).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
     .sort((a, b) => a - b);
+}
+
+function normalizePromotionVariantIds(rawVariantIds) {
+  if (!Array.isArray(rawVariantIds)) return [];
+
+  return [...new Set(rawVariantIds.map((variantId) => String(variantId || '').trim()).filter(Boolean))];
+}
+
+function normalizeVariantPromotions(rawPromotions, variants = []) {
+  if (!Array.isArray(rawPromotions)) return [];
+
+  const variantIds = new Set(variants.map((variant) => variant.id).filter(Boolean));
+  const normalized = [];
+
+  for (const rawPromotion of rawPromotions) {
+    const selectedIds = normalizePromotionVariantIds(rawPromotion?.variantIds).filter(
+      (variantId) => !variantIds.size || variantIds.has(variantId)
+    );
+    if (!selectedIds.length) continue;
+
+    const selectedPrices = variants
+      .filter((variant) => selectedIds.includes(variant.id))
+      .map((variant) => Number(variant.price))
+      .filter((price) => Number.isFinite(price) && price >= 0);
+    const basePrice = selectedPrices.length ? Math.min(...selectedPrices) : 0;
+    const normalizedPromotion = normalizePromotion(
+      {
+        ...rawPromotion,
+        target: 'variants',
+        variantIds: selectedIds
+      },
+      basePrice
+    );
+
+    if (!normalizedPromotion || normalizedPromotion.type !== 'percentage') continue;
+    normalized.push(normalizedPromotion);
+  }
+
+  return normalized;
 }
 
 function normalizeTimeString(value, fallback = '') {
@@ -566,7 +613,34 @@ function formatPromotionBadge(discountPercentage) {
   return `${display}% OFF`;
 }
 
-function getEffectivePricing(basePrice, promotion, nowMs = Date.now()) {
+function isPromotionActiveNow(normalizedPromotion, nowMs = Date.now()) {
+  const startTs = Date.parse(normalizedPromotion.startAt);
+  const endTs = Date.parse(normalizedPromotion.endAt);
+  return normalizedPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY
+    ? isWeeklyPromotionActive(normalizedPromotion, nowMs)
+    : nowMs >= startTs && nowMs <= endTs;
+}
+
+function promotionTargetsVariant(normalizedPromotion, variantId = '') {
+  if (normalizedPromotion.target !== 'variants') return true;
+  if (!variantId) return false;
+  return normalizePromotionVariantIds(normalizedPromotion.variantIds).includes(variantId);
+}
+
+function getEmptyPricing(basePrice) {
+  const safePrice = Number.isFinite(basePrice) && basePrice >= 0 ? Number(basePrice.toFixed(2)) : 0;
+  return {
+    hasPromotion: false,
+    originalPrice: safePrice,
+    finalPrice: safePrice,
+    badgeText: ''
+  };
+}
+
+function getEffectivePricing(basePrice, promotion, options = {}) {
+  const nowMs = typeof options === 'number' ? options : options.nowMs ?? Date.now();
+  const variantId = typeof options === 'object' ? String(options.variantId || '') : '';
+
   if (!Number.isFinite(basePrice) || basePrice < 0) {
     return {
       hasPromotion: false,
@@ -578,28 +652,11 @@ function getEffectivePricing(basePrice, promotion, nowMs = Date.now()) {
 
   const normalizedPromotion = normalizePromotion(promotion, basePrice);
   if (!normalizedPromotion) {
-    return {
-      hasPromotion: false,
-      originalPrice: Number(basePrice.toFixed(2)),
-      finalPrice: Number(basePrice.toFixed(2)),
-      badgeText: ''
-    };
+    return getEmptyPricing(basePrice);
   }
 
-  const startTs = Date.parse(normalizedPromotion.startAt);
-  const endTs = Date.parse(normalizedPromotion.endAt);
-  const isActive =
-    normalizedPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY
-      ? isWeeklyPromotionActive(normalizedPromotion, nowMs)
-      : nowMs >= startTs && nowMs <= endTs;
-
-  if (!isActive) {
-    return {
-      hasPromotion: false,
-      originalPrice: Number(basePrice.toFixed(2)),
-      finalPrice: Number(basePrice.toFixed(2)),
-      badgeText: ''
-    };
+  if (!promotionTargetsVariant(normalizedPromotion, variantId) || !isPromotionActiveNow(normalizedPromotion, nowMs)) {
+    return getEmptyPricing(basePrice);
   }
 
   if (normalizedPromotion.type === 'percentage') {
@@ -624,6 +681,44 @@ function getEffectivePricing(basePrice, promotion, nowMs = Date.now()) {
 function getEffectiveProductPricing(product, nowMs = Date.now()) {
   const basePrice = Number(product?.price);
   return getEffectivePricing(basePrice, product?.promotion, nowMs);
+}
+
+function getBestPricing(basePrice, promotions = [], options = {}) {
+  const base = getEmptyPricing(basePrice);
+  let best = base;
+
+  for (const promotion of promotions) {
+    const pricing = getEffectivePricing(basePrice, promotion, options);
+    if (pricing.hasPromotion && (!best.hasPromotion || pricing.finalPrice < best.finalPrice)) {
+      best = pricing;
+    }
+  }
+
+  return best;
+}
+
+function getVariantPromotionsForVariant(product, variantId) {
+  return normalizeVariantPromotions(product?.variantPromotions, normalizeProductVariants(product?.variants)).filter((promotion) =>
+    promotionTargetsVariant(promotion, variantId)
+  );
+}
+
+function getEffectiveVariantPricing(basePrice, product, variant, nowMs = Date.now()) {
+  const variantId = String(variant?.id || '');
+  return getBestPricing(
+    basePrice,
+    [product?.promotion, ...getVariantPromotionsForVariant(product, variantId)].filter(Boolean),
+    { variantId, nowMs }
+  );
+}
+
+function getSelectedVariantPromotionBadgeText(product, nowMs = Date.now()) {
+  const variants = normalizeProductVariants(product?.variants);
+  const variantPromotions = normalizeVariantPromotions(product?.variantPromotions, variants);
+  const activePromotion = variantPromotions.find((promotion) => isPromotionActiveNow(promotion, nowMs));
+
+  if (!activePromotion || activePromotion.type !== 'percentage') return '';
+  return `${formatPromotionBadge(activePromotion.discountPercentage)} sel.`;
 }
 
 function getCategoryName(categoryId) {
@@ -708,6 +803,7 @@ function renderProducts() {
     const pricing = getEffectiveProductPricing(product);
     const priceElement = node.querySelector('.price');
     const promoBadge = node.querySelector('.promo-badge');
+    const selectedVariantBadgeText = getSelectedVariantPromotionBadgeText(product);
 
     if (pricing.hasPromotion) {
       priceElement.innerHTML = `<span class="price-old">${escapeHtml(
@@ -720,8 +816,8 @@ function renderProducts() {
     } else {
       priceElement.textContent = formatMoney(pricing.finalPrice);
       if (promoBadge) {
-        promoBadge.hidden = true;
-        promoBadge.textContent = '';
+        promoBadge.hidden = !selectedVariantBadgeText;
+        promoBadge.textContent = selectedVariantBadgeText;
       }
     }
 
@@ -856,7 +952,7 @@ function renderConfiguratorVariants() {
 
   for (let index = 0; index < state.configurator.variants.length; index += 1) {
     const variant = state.configurator.variants[index];
-    const variantPricing = getEffectivePricing(Number(variant.price), product?.promotion);
+    const variantPricing = getEffectiveVariantPricing(Number(variant.price), product, variant);
 
     const label = document.createElement('label');
     label.className = 'config-variant-option';
@@ -1001,7 +1097,10 @@ function updateProductConfiguratorTotal() {
     selectedVariant && state.configurator.productMode === PRODUCT_MODE_VARIANTS
       ? Number(selectedVariant.price)
       : Number(product.price);
-  const basePriceDetails = getEffectivePricing(basePriceInput, product.promotion);
+  const basePriceDetails =
+    selectedVariant && state.configurator.productMode === PRODUCT_MODE_VARIANTS
+      ? getEffectiveVariantPricing(basePriceInput, product, selectedVariant)
+      : getEffectivePricing(basePriceInput, product.promotion);
   const basePrice = basePriceDetails.finalPrice;
 
   if (selectedVariant && state.configurator.productMode === PRODUCT_MODE_VARIANTS) {
@@ -1176,7 +1275,9 @@ function renderCart() {
     const extras = normalizeCartExtras(cartItem.extras);
     const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
     const basePriceSource = variant ? Number(variant.price) : Number(product.price);
-    const basePrice = getEffectivePricing(basePriceSource, product.promotion).finalPrice;
+    const basePrice = variant
+      ? getEffectiveVariantPricing(basePriceSource, product, variant).finalPrice
+      : getEffectivePricing(basePriceSource, product.promotion).finalPrice;
     const unitPrice = basePrice + extrasTotal;
     const subtotal = unitPrice * cartItem.quantity;
 
@@ -1270,7 +1371,9 @@ function checkoutByWhatsapp() {
     const extras = normalizeCartExtras(cartItem.extras);
     const extrasTotal = extras.reduce((sum, extra) => sum + extra.price, 0);
     const basePriceSource = variant ? Number(variant.price) : Number(product.price);
-    const basePrice = getEffectivePricing(basePriceSource, product.promotion).finalPrice;
+    const basePrice = variant
+      ? getEffectiveVariantPricing(basePriceSource, product, variant).finalPrice
+      : getEffectivePricing(basePriceSource, product.promotion).finalPrice;
     const unitPrice = basePrice + extrasTotal;
     const subtotal = unitPrice * cartItem.quantity;
 

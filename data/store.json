@@ -1,10 +1,11 @@
 {
   "settings": {
     "storeName": "Heavy Burger",
-    "whatsappNumber": "5493755657062",
+    "whatsappNumber": "5493764565679",
     "whatsappFooter": "Espero la confirmación de mi pedido!",
     "currency": "ARS",
     "currencySymbol": "$",
+    "defaultCategoryId": "all",
     "primaryColor": "#0B0B0D",
     "secondaryColor": "#C43A40"
   },
@@ -113,7 +114,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -143,7 +144,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp41tmvf7ccn"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-american",
@@ -227,7 +257,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -257,7 +287,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp4fwe0ekvca"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-cuarto-453gr",
@@ -341,7 +400,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -371,7 +430,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp4uwcia1bp7"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-canchera",
@@ -455,7 +543,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -485,7 +573,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp548axr3csi"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-bacon",
@@ -569,7 +686,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -599,7 +716,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp5jobygxj5u"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-crispy",
@@ -683,7 +829,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -713,7 +859,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp5w7k4scav3"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-urban",
@@ -797,7 +972,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -827,7 +1002,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp66f9aussvt"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-heavy-melt",
@@ -911,7 +1115,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -941,7 +1145,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp6gi4ise03q"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-4-quesos",
@@ -1025,7 +1258,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1055,7 +1288,36 @@
         ],
         "noEndDate": true,
         "allDay": false
-      }
+      },
+      "variantPromotions": [
+        {
+          "type": "percentage",
+          "discountPercentage": 20,
+          "startAt": "2026-07-16T03:00:00.000Z",
+          "endAt": "+010000-01-01T02:59:00.000Z",
+          "recurrence": "weekly",
+          "recurringDays": [
+            4
+          ],
+          "weeklyWindows": [
+            {
+              "id": "window-thursday-to-friday",
+              "days": [
+                4
+              ],
+              "startTime": "00:00",
+              "endTime": "04:00",
+              "endDayOffset": 1
+            }
+          ],
+          "noEndDate": true,
+          "allDay": false,
+          "target": "variants",
+          "variantIds": [
+            "variant-mrcp6rfggugka2"
+          ]
+        }
+      ]
     },
     {
       "id": "prod-big-heavy",
@@ -1128,7 +1390,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1231,7 +1493,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1294,7 +1556,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1357,7 +1619,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1420,7 +1682,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1483,7 +1745,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",
@@ -1546,7 +1808,7 @@
       "allowComments": true,
       "promotion": {
         "type": "percentage",
-        "discountPercentage": 20,
+        "discountPercentage": 15,
         "startAt": "2026-07-11T03:00:00.000Z",
         "endAt": "+010000-01-01T02:59:00.000Z",
         "recurrence": "weekly",

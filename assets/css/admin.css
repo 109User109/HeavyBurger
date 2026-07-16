@@ -798,6 +798,36 @@ input.invalid {
   padding: 0 0.35rem;
 }
 
+.promotion-variant-target {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.promotion-variant-target legend {
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 0 0.35rem;
+}
+
+.promotion-variant-target-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.promotion-variant-target-list label {
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.5rem;
+}
+
 .promotion-weekly-windows {
   display: grid;
   gap: 0.6rem;

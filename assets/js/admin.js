@@ -12,6 +12,11 @@ const state = {
     enabled: false,
     draft: null
   },
+  variantPromotion: {
+    enabled: false,
+    draft: null
+  },
+  promotionModalMode: 'product',
   image: {
     mode: 'none',
     url: '',
@@ -45,6 +50,8 @@ const PRODUCT_MODE_VARIANTS = 'variants';
 const PROMOTION_RECURRENCE_NONE = 'none';
 const PROMOTION_RECURRENCE_WEEKLY = 'weekly';
 const PROMOTION_INDEFINITE_END_DATE = '9999-12-31';
+const PROMOTION_MODAL_PRODUCT = 'product';
+const PROMOTION_MODAL_VARIANT = 'variant';
 const WEEKDAY_LABELS = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
 const CLIPBOARD_IMAGE_EXTENSION_BY_TYPE = new Map([
   ['image/png', 'png'],
@@ -101,6 +108,10 @@ const dom = {
   promotionEnabled: document.getElementById('promotion-enabled'),
   promotionSummary: document.getElementById('promotion-summary'),
   configurePromotionBtn: document.getElementById('configure-promotion-btn'),
+  variantPromotionEditor: document.getElementById('variant-promotion-editor'),
+  variantPromotionEnabled: document.getElementById('variant-promotion-enabled'),
+  variantPromotionSummary: document.getElementById('variant-promotion-summary'),
+  configureVariantPromotionBtn: document.getElementById('configure-variant-promotion-btn'),
   promotionModal: document.getElementById('promotion-modal'),
   promotionModalBackdrop: document.getElementById('promotion-modal-backdrop'),
   promotionModalClose: document.getElementById('promotion-modal-close'),
@@ -111,6 +122,8 @@ const dom = {
   promotionDiscount: document.getElementById('promotion-discount'),
   promotionFixedPriceWrap: document.getElementById('promotion-fixed-price-wrap'),
   promotionFixedPrice: document.getElementById('promotion-fixed-price'),
+  promotionVariantTargetWrap: document.getElementById('promotion-variant-target-wrap'),
+  promotionVariantTargetList: document.getElementById('promotion-variant-target-list'),
   promotionStartWrap: document.getElementById('promotion-start-wrap'),
   promotionEndWrap: document.getElementById('promotion-end-wrap'),
   promotionStart: document.getElementById('promotion-start'),
@@ -203,7 +216,9 @@ function bindEvents() {
   });
   dom.productForm.elements.categoryId.addEventListener('change', renderPreviewCard);
   dom.promotionEnabled.addEventListener('change', onPromotionEnabledChange);
-  dom.configurePromotionBtn.addEventListener('click', openPromotionModal);
+  dom.variantPromotionEnabled.addEventListener('change', onVariantPromotionEnabledChange);
+  dom.configurePromotionBtn.addEventListener('click', () => openPromotionModal(PROMOTION_MODAL_PRODUCT));
+  dom.configureVariantPromotionBtn.addEventListener('click', () => openPromotionModal(PROMOTION_MODAL_VARIANT));
   dom.promotionModalBackdrop.addEventListener('click', closePromotionModal);
   dom.promotionModalClose.addEventListener('click', closePromotionModal);
   dom.promotionModalCancel.addEventListener('click', closePromotionModal);
@@ -785,6 +800,7 @@ function normalizeProductForAdmin(product = {}) {
     variants: productMode === PRODUCT_MODE_VARIANTS ? variants : [],
     price: basePrice,
     extras: normalizeProductExtras(product.extras),
+    variantPromotions: Array.isArray(product.variantPromotions) ? product.variantPromotions : [],
     hidden: product.hidden === true,
     allowComments: product.allowComments !== false
   };
@@ -805,6 +821,7 @@ function setProductModeUI(mode) {
   const isVariantsMode = mode === PRODUCT_MODE_VARIANTS;
 
   dom.variantsEditor.hidden = !isVariantsMode;
+  dom.variantPromotionEditor.hidden = !isVariantsMode;
   dom.productForm.elements.price.required = !isVariantsMode;
   dom.productForm.elements.price.readOnly = isVariantsMode;
   dom.productForm.elements.price.setAttribute('aria-readonly', isVariantsMode ? 'true' : 'false');
@@ -825,9 +842,15 @@ function setProductModeUI(mode) {
 
   if (isVariantsMode) {
     syncPriceFromFirstVariant();
+  } else {
+    state.variantPromotion.enabled = false;
+    state.variantPromotion.draft = null;
+    dom.variantPromotionEnabled.checked = false;
+    dom.configureVariantPromotionBtn.disabled = true;
   }
 
   renderPromotionSummary();
+  renderVariantPromotionSummary();
   renderPreviewCard();
 }
 
@@ -849,6 +872,17 @@ function renderProductVariantsEditor(variants = []) {
   }
 }
 
+function makeClientVariantId(name = '') {
+  const slug = String(name || 'variant')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 24) || 'variant';
+  return `variant-${slug}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
 function appendVariantEditorRow(variant = {}) {
   const emptyState = dom.productVariantsList.querySelector('[data-empty-variants]');
   if (emptyState) {
@@ -857,7 +891,9 @@ function appendVariantEditorRow(variant = {}) {
 
   const row = document.createElement('article');
   row.className = 'variant-row';
+  const variantId = String(variant.id || makeClientVariantId(variant.name)).trim();
   row.innerHTML = `
+    <input type="hidden" data-variant-field="id" value="${escapeAttribute(variantId)}" />
     <label>
       Nombre de variante
       <input type="text" data-variant-field="name" value="${escapeAttribute(
@@ -892,6 +928,7 @@ function onProductVariantsAction(event) {
   if (getSelectedProductMode() === PRODUCT_MODE_VARIANTS) {
     syncPriceFromFirstVariant();
     renderPromotionSummary();
+    renderVariantPromotionSummary();
     renderPreviewCard();
   }
 }
@@ -901,7 +938,18 @@ function onProductVariantsInput() {
 
   syncPriceFromFirstVariant();
   renderPromotionSummary();
+  renderVariantPromotionSummary();
   renderPreviewCard();
+}
+
+function getCurrentVariantEditorItems() {
+  return Array.from(dom.productVariantsList.querySelectorAll('.variant-row'))
+    .map((row) => ({
+      id: row.querySelector('[data-variant-field="id"]')?.value.trim() || '',
+      name: row.querySelector('[data-variant-field="name"]')?.value.trim() || '',
+      price: Number(row.querySelector('[data-variant-field="price"]')?.value.trim() || '')
+    }))
+    .filter((variant) => variant.id && variant.name && Number.isFinite(variant.price) && variant.price >= 0);
 }
 
 function collectProductVariantsFromEditor({ requireAtLeastOne = false } = {}) {
@@ -909,6 +957,7 @@ function collectProductVariantsFromEditor({ requireAtLeastOne = false } = {}) {
   const variants = [];
 
   for (const row of rows) {
+    const id = row.querySelector('[data-variant-field="id"]')?.value.trim() || makeClientVariantId();
     const name = row.querySelector('[data-variant-field="name"]')?.value.trim() || '';
     const priceRaw = row.querySelector('[data-variant-field="price"]')?.value.trim() || '';
     const hasAnyValue = Boolean(name || priceRaw);
@@ -926,6 +975,7 @@ function collectProductVariantsFromEditor({ requireAtLeastOne = false } = {}) {
     }
 
     variants.push({
+      id,
       name,
       price: Number(parsedPrice.toFixed(2))
     });
@@ -1056,21 +1106,45 @@ function onPromotionEnabledChange(event) {
     return;
   }
 
-  ensurePromotionDraft();
+  ensurePromotionDraft(PROMOTION_MODAL_PRODUCT);
   renderPromotionSummary();
   renderPreviewCard();
-  openPromotionModal();
+  openPromotionModal(PROMOTION_MODAL_PRODUCT);
 }
 
-function ensurePromotionDraft() {
-  if (state.promotion.draft) return;
+function onVariantPromotionEnabledChange(event) {
+  const enabled = Boolean(event.target.checked);
+  state.variantPromotion.enabled = enabled;
+  dom.configureVariantPromotionBtn.disabled = !enabled;
+
+  if (!enabled) {
+    state.variantPromotion.draft = null;
+    closePromotionModal();
+    renderVariantPromotionSummary();
+    renderPreviewCard();
+    return;
+  }
+
+  ensurePromotionDraft(PROMOTION_MODAL_VARIANT);
+  renderVariantPromotionSummary();
+  openPromotionModal(PROMOTION_MODAL_VARIANT);
+}
+
+function getPromotionState(mode = state.promotionModalMode) {
+  return mode === PROMOTION_MODAL_VARIANT ? state.variantPromotion : state.promotion;
+}
+
+function ensurePromotionDraft(mode = state.promotionModalMode) {
+  const promotionState = getPromotionState(mode);
+  if (promotionState.draft) return;
 
   const now = new Date();
   now.setSeconds(0, 0);
   const end = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const basePrice = Number(dom.productForm.elements.price.value);
+  const variantIds = mode === PROMOTION_MODAL_VARIANT ? getCurrentVariantEditorItems().map((variant) => variant.id).filter(Boolean) : [];
 
-  state.promotion.draft = {
+  promotionState.draft = {
     type: 'percentage',
     discountPercentage: 10,
     promotionalPrice: Number.isFinite(basePrice) && basePrice > 0 ? Number((basePrice * 0.9).toFixed(2)) : null,
@@ -1078,7 +1152,9 @@ function ensurePromotionDraft() {
     endAt: end.toISOString(),
     recurrence: PROMOTION_RECURRENCE_NONE,
     recurringDays: [],
-    weeklyWindows: []
+    weeklyWindows: [],
+    target: mode === PROMOTION_MODAL_VARIANT ? 'variants' : 'product',
+    variantIds
   };
 }
 
@@ -1102,11 +1178,20 @@ function onPromotionRecurrenceChange() {
 }
 
 function syncPromotionTypeVisibility(type) {
-  const isPercentage = type === 'percentage';
+  const isVariantMode = state.promotionModalMode === PROMOTION_MODAL_VARIANT;
+  const isPercentage = isVariantMode || type === 'percentage';
+  if (isVariantMode) {
+    dom.promotionType.value = 'percentage';
+  }
   dom.promotionDiscountWrap.hidden = !isPercentage;
-  dom.promotionFixedPriceWrap.hidden = isPercentage;
+  dom.promotionFixedPriceWrap.hidden = isPercentage || isVariantMode;
   dom.promotionDiscount.required = isPercentage;
-  dom.promotionFixedPrice.required = !isPercentage;
+  dom.promotionFixedPrice.required = !isPercentage && !isVariantMode;
+}
+
+function syncPromotionTargetVisibility() {
+  const isVariantMode = state.promotionModalMode === PROMOTION_MODAL_VARIANT;
+  dom.promotionVariantTargetWrap.hidden = !isVariantMode;
 }
 
 function syncPromotionRecurrenceVisibility(recurrence) {
@@ -1136,14 +1221,21 @@ function syncWeeklyOptionControls() {
   }
 }
 
-function openPromotionModal() {
-  if (!dom.promotionEnabled.checked) return;
+function openPromotionModal(mode = PROMOTION_MODAL_PRODUCT) {
+  state.promotionModalMode = mode;
+  const promotionState = getPromotionState(mode);
+  const enabledInput = mode === PROMOTION_MODAL_VARIANT ? dom.variantPromotionEnabled : dom.promotionEnabled;
 
-  ensurePromotionDraft();
-  const draft = state.promotion.draft;
+  if (!enabledInput.checked) return;
+
+  ensurePromotionDraft(mode);
+  const draft = promotionState.draft;
   if (!draft) return;
 
+  document.getElementById('promotion-modal-title').textContent =
+    mode === PROMOTION_MODAL_VARIANT ? 'Configurar promocion por variantes' : 'Configurar promocion general';
   dom.promotionType.value = draft.type || 'percentage';
+  dom.promotionType.disabled = mode === PROMOTION_MODAL_VARIANT;
   dom.promotionDiscount.value =
     draft.discountPercentage !== null && draft.discountPercentage !== undefined ? String(draft.discountPercentage) : '';
   dom.promotionFixedPrice.value =
@@ -1156,13 +1248,16 @@ function openPromotionModal() {
 
   syncWeeklyScheduleFieldsFromDateTimeInputs();
   renderPromotionWeeklyWindowsEditor(draft.weeklyWindows);
+  renderPromotionVariantTargetEditor(draft.variantIds);
   syncPromotionTypeVisibility(dom.promotionType.value);
   syncPromotionRecurrenceVisibility(dom.promotionRecurrence.value);
+  syncPromotionTargetVisibility();
   dom.promotionModal.hidden = false;
 }
 
 function closePromotionModal() {
   dom.promotionModal.hidden = true;
+  dom.promotionType.disabled = false;
 }
 
 function toLocalDateTimeInputValue(isoValue) {
@@ -1254,6 +1349,12 @@ function normalizePromotionRecurringDays(rawDays) {
 
   return [...new Set(rawDays.map((day) => Number(day)).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
     .sort((a, b) => a - b);
+}
+
+function normalizePromotionVariantIds(rawVariantIds) {
+  if (!Array.isArray(rawVariantIds)) return [];
+
+  return [...new Set(rawVariantIds.map((variantId) => String(variantId || '').trim()).filter(Boolean))];
 }
 
 function normalizeTimeString(value, fallback = '') {
@@ -1348,6 +1449,38 @@ function renderPromotionWeeklyWindowsEditor(rawWindows) {
   for (const weeklyWindow of rows) {
     appendPromotionWeeklyWindowRow(weeklyWindow);
   }
+}
+
+function renderPromotionVariantTargetEditor(selectedVariantIds = []) {
+  dom.promotionVariantTargetList.innerHTML = '';
+
+  const variants = getCurrentVariantEditorItems();
+  const selected = new Set(Array.isArray(selectedVariantIds) ? selectedVariantIds.map((id) => String(id)) : []);
+
+  if (!variants.length) {
+    dom.promotionVariantTargetList.innerHTML = '<p class="empty-list">Primero carga variantes con nombre y precio.</p>';
+    return;
+  }
+
+  dom.promotionVariantTargetList.innerHTML = variants
+    .map((variant) => {
+      const checked = selected.has(variant.id) ? 'checked' : '';
+      return `
+        <label>
+          <input type="checkbox" value="${escapeAttribute(variant.id)}" data-promotion-variant-target ${checked} />
+          <span>${escapeHtml(variant.name)} · ${escapeHtml(formatMoney(variant.price))}</span>
+        </label>
+      `;
+    })
+    .join('');
+}
+
+function collectPromotionVariantTargetsFromModal() {
+  if (state.promotionModalMode !== PROMOTION_MODAL_VARIANT) return [];
+
+  return Array.from(dom.promotionVariantTargetList.querySelectorAll('[data-promotion-variant-target]:checked'))
+    .map((input) => String(input.value || '').trim())
+    .filter(Boolean);
 }
 
 function appendPromotionWeeklyWindowRow(rawWindow) {
@@ -1488,9 +1621,11 @@ function isWeeklyPromotionActive(promotion, nowMs = Date.now()) {
 }
 
 function collectPromotionDraftFromModal() {
-  const type = String(dom.promotionType.value || '').trim();
+  const isVariantMode = state.promotionModalMode === PROMOTION_MODAL_VARIANT;
+  const type = isVariantMode ? 'percentage' : String(dom.promotionType.value || '').trim();
   const recurrence = String(dom.promotionRecurrence.value || PROMOTION_RECURRENCE_NONE).trim();
   const noEndDate = recurrence === PROMOTION_RECURRENCE_WEEKLY && dom.promotionWeeklyNoEnd.checked;
+  const variantIds = isVariantMode ? collectPromotionVariantTargetsFromModal() : [];
 
   if (![PROMOTION_RECURRENCE_NONE, PROMOTION_RECURRENCE_WEEKLY].includes(recurrence)) {
     return { ok: false, error: 'Selecciona una repeticion valida.' };
@@ -1516,6 +1651,10 @@ function collectPromotionDraftFromModal() {
   const startAt = localDateTimeInputToIso(startValue);
   const endAt = localDateTimeInputToIso(endValue);
   const basePrice = Number(dom.productForm.elements.price.value);
+
+  if (isVariantMode && !variantIds.length) {
+    return { ok: false, error: 'Selecciona al menos una variante para esta promocion.' };
+  }
 
   if (!Number.isFinite(basePrice) || basePrice < 0) {
     return { ok: false, error: 'Define primero un precio normal valido para el producto.' };
@@ -1558,6 +1697,8 @@ function collectPromotionDraftFromModal() {
         recurrence,
         recurringDays,
         weeklyWindows,
+        target: isVariantMode ? 'variants' : 'product',
+        variantIds,
         noEndDate,
         allDay: false
       }
@@ -1565,6 +1706,10 @@ function collectPromotionDraftFromModal() {
   }
 
   if (type === 'fixed_price') {
+    if (isVariantMode) {
+      return { ok: false, error: 'Las promociones por variante usan descuento porcentual.' };
+    }
+
     const promotionalPrice = Number(dom.promotionFixedPrice.value);
     if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0) {
       return { ok: false, error: 'El precio promocional debe ser valido.' };
@@ -1584,6 +1729,8 @@ function collectPromotionDraftFromModal() {
         recurrence,
         recurringDays,
         weeklyWindows,
+        target: 'product',
+        variantIds: [],
         noEndDate,
         allDay: false
       }
@@ -1602,13 +1749,22 @@ function onPromotionModalSubmit(event) {
     return;
   }
 
-  state.promotion.enabled = true;
-  state.promotion.draft = result.promotion;
-  dom.promotionEnabled.checked = true;
-  dom.configurePromotionBtn.disabled = false;
+  const isVariantMode = state.promotionModalMode === PROMOTION_MODAL_VARIANT;
+  const promotionState = getPromotionState();
+  promotionState.enabled = true;
+  promotionState.draft = result.promotion;
+
+  if (isVariantMode) {
+    dom.variantPromotionEnabled.checked = true;
+    dom.configureVariantPromotionBtn.disabled = false;
+  } else {
+    dom.promotionEnabled.checked = true;
+    dom.configurePromotionBtn.disabled = false;
+  }
 
   closePromotionModal();
   renderPromotionSummary();
+  renderVariantPromotionSummary();
   renderPreviewCard();
   showStatus('Promocion configurada.', 'success');
 }
@@ -1626,6 +1782,8 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
 
   const startAt = new Date(startTimestamp).toISOString();
   const endAt = new Date(endTimestamp).toISOString();
+  const target = rawPromotion.target === 'variants' ? 'variants' : 'product';
+  const variantIds = target === 'variants' ? normalizePromotionVariantIds(rawPromotion.variantIds) : [];
   const recurrence =
     rawPromotion.recurrence === PROMOTION_RECURRENCE_WEEKLY ? PROMOTION_RECURRENCE_WEEKLY : PROMOTION_RECURRENCE_NONE;
   const legacyRecurringDays =
@@ -1648,6 +1806,7 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
 
   if (startTimestamp >= endTimestamp) return null;
   if (recurrence === PROMOTION_RECURRENCE_WEEKLY && !recurringDays.length) return null;
+  if (target === 'variants' && !variantIds.length) return null;
 
   if (type === 'percentage') {
     const percentage = Number(rawPromotion.discountPercentage ?? rawPromotion.percentage);
@@ -1661,12 +1820,16 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
       recurrence,
       recurringDays,
       weeklyWindows,
+      target,
+      variantIds,
       noEndDate,
       allDay
     };
   }
 
   if (type === 'fixed_price') {
+    if (target === 'variants') return null;
+
     const promotionalPrice = Number(rawPromotion.promotionalPrice ?? rawPromotion.price);
     if (!Number.isFinite(promotionalPrice) || promotionalPrice < 0) return null;
     if (Number.isFinite(basePrice) && promotionalPrice >= basePrice) return null;
@@ -1679,6 +1842,8 @@ function normalizePromotionDraft(rawPromotion, basePrice) {
       recurrence,
       recurringDays,
       weeklyWindows,
+      target,
+      variantIds,
       noEndDate,
       allDay
     };
@@ -1792,6 +1957,63 @@ function renderPromotionSummary() {
   dom.promotionSummary.textContent = `${detail} (${stateText}) · ${scheduleText}`;
 }
 
+function formatPromotionVariantTargets(variantIds = []) {
+  const ids = new Set(normalizePromotionVariantIds(variantIds));
+  const variants = getCurrentVariantEditorItems().filter((variant) => ids.has(variant.id));
+  if (!variants.length) return 'sin variantes';
+  return variants.map((variant) => variant.name).join(', ');
+}
+
+function renderVariantPromotionSummary() {
+  const variantsMode = getSelectedProductMode() === PRODUCT_MODE_VARIANTS;
+  dom.variantPromotionEditor.hidden = !variantsMode;
+
+  if (!variantsMode) {
+    dom.configureVariantPromotionBtn.disabled = true;
+    return;
+  }
+
+  if (!dom.variantPromotionEnabled.checked) {
+    dom.configureVariantPromotionBtn.disabled = true;
+    dom.variantPromotionSummary.textContent = 'Sin promocion de variantes configurada.';
+    return;
+  }
+
+  dom.configureVariantPromotionBtn.disabled = false;
+
+  if (!state.variantPromotion.draft) {
+    dom.variantPromotionSummary.textContent = 'Promocion de variantes activada, falta configurar.';
+    return;
+  }
+
+  const normalized = normalizePromotionDraft(state.variantPromotion.draft, Number(dom.productForm.elements.price.value));
+  if (!normalized) {
+    dom.variantPromotionSummary.textContent = 'Promocion de variantes incompleta.';
+    return;
+  }
+
+  const active = isPromotionActive(normalized);
+  const now = Date.now();
+  const ended = now > Date.parse(normalized.endAt);
+  const stateText = active
+    ? 'activa'
+    : ended
+      ? 'vencida'
+      : now < Date.parse(normalized.startAt)
+        ? 'programada'
+        : normalized.recurrence === PROMOTION_RECURRENCE_WEEKLY
+          ? 'en pausa'
+          : 'vencida';
+  const scheduleText =
+    normalized.recurrence === PROMOTION_RECURRENCE_WEEKLY
+      ? `Semanal: ${formatPromotionWeeklyWindows(normalized.weeklyWindows)}`
+      : `${formatPromoDate(normalized.startAt)} a ${formatPromoDate(normalized.endAt)}`;
+
+  dom.variantPromotionSummary.textContent = `${formatPromotionBadgeFromPercentage(
+    normalized.discountPercentage
+  )} en ${formatPromotionVariantTargets(normalized.variantIds)} (${stateText}) · ${scheduleText}`;
+}
+
 function collectPromotionPayloadForSubmit() {
   if (!dom.promotionEnabled.checked) {
     return { ok: true, promotion: null };
@@ -1814,6 +2036,27 @@ function collectPromotionPayloadForSubmit() {
   return { ok: true, promotion: normalized };
 }
 
+function collectVariantPromotionsPayloadForSubmit() {
+  if (!dom.variantPromotionEnabled.checked || getSelectedProductMode() !== PRODUCT_MODE_VARIANTS) {
+    return { ok: true, variantPromotions: [] };
+  }
+
+  if (!state.variantPromotion.draft) {
+    return { ok: false, error: 'Activaste promocion por variante pero falta configurarla.' };
+  }
+
+  const normalized = normalizePromotionDraft(state.variantPromotion.draft, Number(dom.productForm.elements.price.value));
+  if (!normalized || normalized.target !== 'variants' || !normalizePromotionVariantIds(normalized.variantIds).length) {
+    return { ok: false, error: 'La promocion por variante configurada no es valida.' };
+  }
+
+  if (Date.parse(normalized.endAt) <= Date.now()) {
+    return { ok: false, error: 'La promocion por variante ya vencio. Ajusta la fecha de fin.' };
+  }
+
+  return { ok: true, variantPromotions: [normalized] };
+}
+
 function fillPromotionEditorFromProduct(product) {
   closePromotionModal();
 
@@ -1834,6 +2077,28 @@ function fillPromotionEditorFromProduct(product) {
   dom.promotionEnabled.checked = true;
   dom.configurePromotionBtn.disabled = false;
   renderPromotionSummary();
+}
+
+function fillVariantPromotionEditorFromProduct(product) {
+  closePromotionModal();
+
+  const variantPromotions = Array.isArray(product?.variantPromotions) ? product.variantPromotions : [];
+  const normalized = normalizePromotionDraft(variantPromotions[0], Number(product?.price));
+
+  if (!normalized || normalized.target !== 'variants') {
+    state.variantPromotion.enabled = false;
+    state.variantPromotion.draft = null;
+    dom.variantPromotionEnabled.checked = false;
+    dom.configureVariantPromotionBtn.disabled = true;
+    renderVariantPromotionSummary();
+    return;
+  }
+
+  state.variantPromotion.enabled = true;
+  state.variantPromotion.draft = normalized;
+  dom.variantPromotionEnabled.checked = true;
+  dom.configureVariantPromotionBtn.disabled = false;
+  renderVariantPromotionSummary();
 }
 
 function getCategoryName(categoryId) {
@@ -2059,6 +2324,12 @@ async function onSaveProduct(event) {
     return;
   }
 
+  const variantPromotionsResult = collectVariantPromotionsPayloadForSubmit();
+  if (!variantPromotionsResult.ok) {
+    showStatus(variantPromotionsResult.error, 'error');
+    return;
+  }
+
   const formData = new FormData();
   formData.append('name', name);
   formData.append('description', description);
@@ -2068,6 +2339,7 @@ async function onSaveProduct(event) {
   formData.append('categoryId', categoryId);
   formData.append('extras', JSON.stringify(extrasResult.extras));
   formData.append('promotion', promotionResult.promotion ? JSON.stringify(promotionResult.promotion) : '');
+  formData.append('variantPromotions', JSON.stringify(variantPromotionsResult.variantPromotions));
   formData.append('removeImage', removeImage ? 'true' : 'false');
   formData.append('allowComments', allowComments ? 'true' : 'false');
 
@@ -2188,6 +2460,7 @@ async function loadProductIntoForm(productId) {
   setProductModeUI(product.productMode);
   renderProductExtrasEditor(normalizeProductExtras(product.extras));
   fillPromotionEditorFromProduct(product);
+  fillVariantPromotionEditorFromProduct(product);
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
   form.elements.removeImage.checked = false;
@@ -2215,9 +2488,13 @@ function resetProductForm() {
   dom.imageFileInput.value = '';
   dom.cameraInput.value = '';
   dom.promotionEnabled.checked = false;
+  dom.variantPromotionEnabled.checked = false;
   dom.configurePromotionBtn.disabled = true;
+  dom.configureVariantPromotionBtn.disabled = true;
   state.promotion.enabled = false;
   state.promotion.draft = null;
+  state.variantPromotion.enabled = false;
+  state.variantPromotion.draft = null;
   closePromotionModal();
   renderProductVariantsEditor([]);
   setSelectedProductMode(PRODUCT_MODE_SINGLE);
@@ -2234,6 +2511,7 @@ function resetProductForm() {
   dom.productForm.querySelector('button[type="submit"]').textContent = 'Guardar producto';
 
   renderPromotionSummary();
+  renderVariantPromotionSummary();
   renderPreviewCard();
 }
 

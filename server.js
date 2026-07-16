@@ -233,7 +233,8 @@ function parseVariantsPayload(rawVariants) {
 
   const normalized = [];
 
-  for (const variant of parsed) {
+  for (let index = 0; index < parsed.length; index += 1) {
+    const variant = parsed[index];
     const name = sanitizeText(variant?.name);
     const price = sanitizePrice(variant?.price);
 
@@ -241,8 +242,11 @@ function parseVariantsPayload(rawVariants) {
       return null;
     }
 
+    const fallbackIdBase = slugify(name) || `variant-${index + 1}`;
+    const id = sanitizeText(variant?.id, `${fallbackIdBase}-${index + 1}`) || makeId('variant');
+
     normalized.push({
-      id: makeId('variant'),
+      id,
       name,
       price
     });
@@ -277,6 +281,7 @@ function normalizeProductForStore(rawProduct = {}, nowMs = Date.now()) {
       : sanitizePrice(product.price);
   const safePrice = basePrice === null ? 0 : basePrice;
   const normalizedPromotion = normalizeStoredPromotion(product.promotion, safePrice, nowMs);
+  const normalizedVariantPromotions = normalizeStoredVariantPromotions(product.variantPromotions, variants, nowMs);
 
   const normalized = {
     ...product,
@@ -292,6 +297,12 @@ function normalizeProductForStore(rawProduct = {}, nowMs = Date.now()) {
     normalized.promotion = normalizedPromotion;
   } else {
     delete normalized.promotion;
+  }
+
+  if (normalizedVariantPromotions.length) {
+    normalized.variantPromotions = normalizedVariantPromotions;
+  } else {
+    delete normalized.variantPromotions;
   }
 
   return normalized;
@@ -359,6 +370,21 @@ function normalizePromotionWeeklyWindows(rawWindows) {
 
 function getWeeklyWindowRecurringDays(weeklyWindows) {
   return normalizePromotionRecurringDays(weeklyWindows.flatMap((window) => window.days || []));
+}
+
+function normalizePromotionVariantIds(rawVariantIds, variants = []) {
+  if (!Array.isArray(rawVariantIds)) return [];
+
+  const validIds = new Set(
+    variants
+      .map((variant) => sanitizeText(variant?.id))
+      .filter(Boolean)
+  );
+  const ids = rawVariantIds
+    .map((variantId) => sanitizeText(variantId))
+    .filter((variantId) => variantId && (!validIds.size || validIds.has(variantId)));
+
+  return [...new Set(ids)];
 }
 
 function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
@@ -436,6 +462,35 @@ function normalizeStoredPromotion(rawPromotion, basePrice, nowMs = Date.now()) {
   };
 }
 
+function normalizeStoredVariantPromotions(rawPromotions, variants = [], nowMs = Date.now()) {
+  if (!Array.isArray(rawPromotions)) return [];
+
+  const normalized = [];
+
+  for (const rawPromotion of rawPromotions) {
+    if (!rawPromotion || typeof rawPromotion !== 'object') continue;
+
+    const variantIds = normalizePromotionVariantIds(rawPromotion.variantIds, variants);
+    if (!variantIds.length) continue;
+
+    const selectedPrices = variants
+      .filter((variant) => variantIds.includes(variant.id))
+      .map((variant) => Number(variant.price))
+      .filter((price) => Number.isFinite(price) && price >= 0);
+    const basePrice = selectedPrices.length ? Math.min(...selectedPrices) : 0;
+    const normalizedPromotion = normalizeStoredPromotion(rawPromotion, basePrice, nowMs);
+    if (!normalizedPromotion || normalizedPromotion.type !== 'percentage') continue;
+
+    normalized.push({
+      ...normalizedPromotion,
+      target: 'variants',
+      variantIds
+    });
+  }
+
+  return normalized;
+}
+
 function parsePromotionPayload(rawPromotion, basePrice, nowMs = Date.now()) {
   if (rawPromotion === undefined || rawPromotion === null || rawPromotion === '') {
     return { ok: true, promotion: null };
@@ -470,6 +525,33 @@ function parsePromotionPayload(rawPromotion, basePrice, nowMs = Date.now()) {
   }
 
   return { ok: true, promotion: normalized };
+}
+
+function parseVariantPromotionsPayload(rawPromotions, variants = [], nowMs = Date.now()) {
+  if (rawPromotions === undefined || rawPromotions === null || rawPromotions === '') {
+    return { ok: true, variantPromotions: [] };
+  }
+
+  let parsed = rawPromotions;
+
+  if (typeof rawPromotions === 'string') {
+    try {
+      parsed = JSON.parse(rawPromotions);
+    } catch {
+      return { ok: false, error: 'Payload de promociones por variante invalido.' };
+    }
+  }
+
+  if (!Array.isArray(parsed)) {
+    return { ok: false, error: 'Payload de promociones por variante invalido.' };
+  }
+
+  const normalized = normalizeStoredVariantPromotions(parsed, variants, nowMs);
+  if (parsed.length && !normalized.length) {
+    return { ok: false, error: 'Datos de promocion por variante invalidos.' };
+  }
+
+  return { ok: true, variantPromotions: normalized };
 }
 
 function sanitizePhone(value) {
@@ -1276,6 +1358,7 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       productMode === PRODUCT_MODE_VARIANTS ? Number(variants?.[0]?.price) : sanitizePrice(req.body.price);
     const extras = parseExtrasPayload(req.body.extras);
     const promotionResult = parsePromotionPayload(req.body.promotion, Number(price));
+    const variantPromotionsResult = parseVariantPromotionsPayload(req.body.variantPromotions, variants);
     const allowComments = String(req.body.allowComments ?? 'true') === 'true';
 
     if (parsedVariants === null) {
@@ -1308,6 +1391,12 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
       return;
     }
 
+    if (!variantPromotionsResult.ok) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: variantPromotionsResult.error });
+      return;
+    }
+
     const category = getCategoryById(store, categoryId);
     if (!category) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
@@ -1332,6 +1421,10 @@ app.post('/api/products', requireAdminAuth, upload.single('image'), async (req, 
 
     if (promotionResult.promotion) {
       product.promotion = promotionResult.promotion;
+    }
+
+    if (variantPromotionsResult.variantPromotions.length) {
+      product.variantPromotions = variantPromotionsResult.variantPromotions;
     }
 
     store.products.push(product);
@@ -1389,6 +1482,10 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
       req.body.promotion !== undefined
         ? parsePromotionPayload(req.body.promotion, Number(price))
         : { ok: true, promotion: normalizeStoredPromotion(product.promotion, Number(price)) };
+    const variantPromotionsResult =
+      req.body.variantPromotions !== undefined
+        ? parseVariantPromotionsPayload(req.body.variantPromotions, variants)
+        : { ok: true, variantPromotions: normalizeStoredVariantPromotions(product.variantPromotions, variants) };
     const removeImage = String(req.body.removeImage || 'false') === 'true';
     const allowComments =
       req.body.allowComments !== undefined
@@ -1425,6 +1522,12 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
       return;
     }
 
+    if (!variantPromotionsResult.ok) {
+      if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
+      res.status(400).json({ error: variantPromotionsResult.error });
+      return;
+    }
+
     const category = getCategoryById(store, categoryId);
     if (!category) {
       if (req.file) await removeImageIfNeeded(`/uploads/${req.file.filename}`);
@@ -1446,6 +1549,11 @@ app.put('/api/products/:id', requireAdminAuth, upload.single('image'), async (re
       product.promotion = promotionResult.promotion;
     } else {
       delete product.promotion;
+    }
+    if (variantPromotionsResult.variantPromotions.length) {
+      product.variantPromotions = variantPromotionsResult.variantPromotions;
+    } else {
+      delete product.variantPromotions;
     }
 
     if (req.file) {
